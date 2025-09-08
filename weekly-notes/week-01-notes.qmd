@@ -4,20 +4,17 @@ date: "2025-09-08"
 ---
 
 ## Key Concepts Learned
-- [List main concepts from lecture]
-- [Technical skills covered]
+- RStudio/GitHub overview 
 
 ## Coding Techniques
-- [New R functions or approaches]
-- [Quarto features learned]
+- New R functions or approaches
+- Quarto features learned
 
 ## Questions & Challenges
-- [What I didn't fully understand]
-- [Areas needing more practice]
+- Need to understand the purpose of all the different program and how they speak to each other. For example, I don't understand how the files that I have clones feed up to my portfolio. How was that connection originally created? 
 
 ## Connections to Policy
-- [How this week's content applies to real policy work]
+- N/A
 
 ## Reflection
-- [What was most interesting]
-- [How I'll apply this knowledge]
+- I am looking forward to building up my technical skills and learning how to code 
