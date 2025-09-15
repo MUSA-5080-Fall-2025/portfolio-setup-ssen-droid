@@ -6,10 +6,12 @@ website:
   title: "Sam Sen - MUSA 5080 Portfolio"
   navbar:
     left:
+    
       - href: index.qmd
         text: Home
-      - href: weekly-notes/
-        text: Weekly Notes
+      -text: Weekly Notes
+      menu: 
+        - href: weekly-notes/week-01-notes.qmd
 
 format:
   html:
@@ -19,3 +21,4 @@ format:
 
 execute:
   freeze: auto
+
