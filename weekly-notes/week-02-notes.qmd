@@ -1,0 +1,8 @@
+---
+title: "Week-2-notes"
+editor: visual
+---
+
+text: "week 2"
+
+href: weekly-notes/week2.qmd
