@@ -36,11 +36,9 @@ library(tidyverse)
 # Read in the car sales data
 # Make sure the data file is in your lab_0/data/ folder
 
-getwd()
-
-setwd(C:\Users\16468\OneDrive - PennO365\Documents\Academics\MUSA\Public Policy Analytics\Week 1\portfolio-setup-ssen-droid\Labs\Lab 0)
 
 car_data<- read_csv("../data/car_sales_data.csv")
+
 
 ```
 
@@ -52,14 +50,12 @@ Explore the structure of your data and answer these questions:
 
 ```{r explore-structure}
 # Use glimpse() to see the data structure
-dim(car_data)
 
-glimpse(car_)
 
 # Check the column names
 
 # Look at the first few rows
-head(car_data)
+
 ```
 
 **Questions to answer:**

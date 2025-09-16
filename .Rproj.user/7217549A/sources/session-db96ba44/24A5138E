@@ -3,7 +3,7 @@
     "path": "~/Academics/MUSA/Public Policy Analytics/Week 1/portfolio-setup-ssen-droid/Labs/Lab 0/Scripts/lab0_template.qmd",
     "project_path": "Labs/Lab 0/Scripts/lab0_template.qmd",
     "type": "quarto_markdown",
-    "hash": "0",
+    "hash": "866572441",
     "contents": "",
     "dirty": false,
     "created": 1757949055638.0,
@@ -12,16 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "58,0",
-        "scrollLine": "0",
-        "last_setup_crc32": ""
+        "cursorPosition": "51,41",
+        "scrollLine": "46",
+        "last_setup_crc32": "db96ba44573f707f"
     },
     "folds": "",
-    "lastKnownWriteTime": 1757955576,
+    "lastKnownWriteTime": 1758055017,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1757955577000,
+    "last_content_update": 1758055017692,
     "read_only": false,
     "read_only_alternatives": []
 }

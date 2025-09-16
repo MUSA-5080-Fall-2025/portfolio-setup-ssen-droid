@@ -3,7 +3,7 @@
     "path": "~/Academics/MUSA/Public Policy Analytics/Week 1/portfolio-setup-ssen-droid/_quarto.yml",
     "project_path": "_quarto.yml",
     "type": "yaml",
-    "hash": "940376714",
+    "hash": "4235104595",
     "contents": "",
     "dirty": false,
     "created": 1757943402521.0,
@@ -12,15 +12,15 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "15,39",
-        "scrollLine": "0"
+        "cursorPosition": "22,0",
+        "scrollLine": "1"
     },
     "folds": "",
-    "lastKnownWriteTime": 1758054147,
+    "lastKnownWriteTime": 1758055731,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1758054147639,
+    "last_content_update": 1758055731697,
     "read_only": false,
     "read_only_alternatives": []
 }

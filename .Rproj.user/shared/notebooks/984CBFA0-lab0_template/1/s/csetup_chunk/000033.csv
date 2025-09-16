@@ -1,4 +1,0 @@
-"0","car_data<- read_csv(""data/car_sales_data.csv"")
-"
-"2","Error: 'data/car_sales_data.csv' does not exist in current working directory ('C:/Users/16468/OneDrive - PennO365/Documents/Academics/MUSA/Public Policy Analytics/Week 1/portfolio-setup-ssen-droid/Labs/Lab 0/Scripts').
-"
