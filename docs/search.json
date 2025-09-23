@@ -1,5 +1,12 @@
 [
   {
+    "objectID": "weekly-notes/week-02-notes.html",
+    "href": "weekly-notes/week-02-notes.html",
+    "title": "Week-2-notes",
+    "section": "",
+    "text": "Algorithmic Decision Making & Census Data\nInputs: Synonyms: Independent variables, “x”’s, predictors, features\nOutputs: Synonyms: dependent variable\nGovernment\n-            Idea is that using data will result in more consistent and unbiased output\n-            Reasons for use: Efficiency, consistency , objectivity, cost savings\n1)       Data Science\n2)       Data Analytics (MUSA)\n3)       Machine Learning \n4)       AI\nSubjectiveness\n-            Data cleaning decisions\n-            Data coding or classification\n-            Collection\n-            How you interpret results\n-            What variables you use\nCensus Data Foundations\n·       9 basic questions (age, race, sex, etc.)\n·       Everyone counted every 10 years\n·       Constitutional requirement\n·       Determines political representation\nAmerican Community Survey (ACS)\n·       3% of households surveyed annually\n·       detailed questions (income, education, housing costs, etc)\no   replacement of the same “long form” in 2005\n·       Areas: of only 65,000 people.\n·       Pretty small sample but you get them every year. Only aggregate level\n·       5-year estimates\no   Take all 1-year and combine together including census tracts (1500-1800 people). Most accurate we can get at the smallest geography and we consider them a neighborhood.\n§  It is changed for redistricting\n§  Frustrating for us when redistricting happens\no   Most reliable data, largest sample\nTidycensus\n-            This package helps organize the census data"
+  },
+  {
     "objectID": "Labs/Lab 0/Scripts/lab0_template.html",
     "href": "Labs/Lab 0/Scripts/lab0_template.html",
     "title": "Lab 0: Getting Started with dplyr",
