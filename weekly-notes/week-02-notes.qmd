@@ -1,8 +1,4 @@
 ---
 title: "Week-2-notes"
-editor: visual
+date: 2025-9-15
 ---
-
-text: "week 2"
-
-href: weekly-notes/week2.qmd

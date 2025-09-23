@@ -3,9 +3,9 @@
     "path": "~/Academics/MUSA/Public Policy Analytics/Week 1/portfolio-setup-ssen-droid/weekly-notes/week-02-notes.qmd",
     "project_path": "weekly-notes/week-02-notes.qmd",
     "type": "quarto_markdown",
-    "hash": "0",
+    "hash": "2697950706",
     "contents": "",
-    "dirty": true,
+    "dirty": false,
     "created": 1758052713175.0,
     "source_on_save": false,
     "relative_order": 5,
@@ -19,14 +19,14 @@
         "rmdVisualCollapsedChunks": "",
         "cursorPosition": "0,0",
         "scrollLine": "0",
-        "rmdVisualModeLocation": "49:0"
+        "rmdVisualModeLocation": "2:0"
     },
     "folds": "",
-    "lastKnownWriteTime": 1758052889,
+    "lastKnownWriteTime": 1758075203,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1758053569404,
+    "last_content_update": 1758075203822,
     "read_only": false,
     "read_only_alternatives": []
 }
