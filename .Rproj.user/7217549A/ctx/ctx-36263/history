@@ -1,0 +1,28 @@
+install.packages("tidyverse")
+install.packages("tidycensus")
+install.packages("knitr")
+quarto::quarto_render()
+quarto preview
+quarto::quarto_preview()
+# install once (Console only)
+needed <- c("tidycensus", "tidyverse", "knitr", "stringr")
+to_install <- setdiff(needed, rownames(installed.packages()))
+if (length(to_install)) install.packages(to_install)
+# store your Census API key (run once, then restart R)
+tidycensus::census_api_key("YOUR_KEY_HERE", install = TRUE)
+# Load required packages (hint: you need tidycensus, tidyverse, and knitr)
+# Set your Census API key
+# Choose your state for analysis - assign it to a variable called my_state
+library(tidycensus)
+library(tidyverse)
+library(knitr)
+library(stringr)
+census_api_key(Sys.getenv("CENSUS_API_KEY"), overwrite = FALSE, install = FALSE)
+options(tigris_use_cache = TRUE)
+my_state <- "New York"
+library(tidycensus)
+library(tidyverse)
+library(knitr)
+library(stringr)
+tidycensus::census_api_key("97daaec9ee5c28f5a1f389b43c260df94a0efea2", install = TRUE)
+tidycensus::census_api_key("97daaec9ee5c28f5a1f389b43c260df94a0efea2", install = TRUE)
