@@ -1,0 +1,7 @@
+"0","# Find the tract with the highest percentage of Hispanic/Latino residents"
+"0","# Hint: use arrange() and slice() to get the top tract"
+"0",""
+"0","# Calculate average demographics by county using group_by() and summarize()"
+"0","# Show: number of tracts, average percentage for each racial/ethnic group"
+"0",""
+"0","# Create a nicely formatted table of your results using kable()"

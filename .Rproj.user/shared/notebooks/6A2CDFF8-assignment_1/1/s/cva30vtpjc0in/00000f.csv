@@ -1,0 +1,5 @@
+"0","# Use filter() to select 2-3 counties from your county_reliability data"
+"0","# Store the selected counties in a variable called selected_counties"
+"0",""
+"0","# Display the selected counties with their key characteristics"
+"0","# Show: county name, median income, MOE percentage, reliability category"

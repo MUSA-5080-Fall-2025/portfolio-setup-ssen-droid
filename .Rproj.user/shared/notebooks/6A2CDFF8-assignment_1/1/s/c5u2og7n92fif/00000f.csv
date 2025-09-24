@@ -1,0 +1,6 @@
+"0","# Group tracts by whether they have high MOE issues"
+"0","# Calculate average characteristics for each group:"
+"0","# - population size, demographic percentages"
+"0",""
+"0","# Use group_by() and summarize() to create this comparison"
+"0","# Create a professional table showing the patterns"

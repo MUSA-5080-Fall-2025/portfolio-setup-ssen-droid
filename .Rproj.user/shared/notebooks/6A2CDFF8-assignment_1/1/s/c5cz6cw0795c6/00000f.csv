@@ -1,0 +1,7 @@
+"0","# Calculate MOE percentages for white, Black, and Hispanic variables"
+"0","# Hint: use the same formula as before (margin/estimate * 100)"
+"0",""
+"0","# Create a flag for tracts with high MOE on any demographic variable"
+"0","# Use logical operators (| for OR) in an ifelse() statement"
+"0",""
+"0","# Create summary statistics showing how many tracts have data quality issues"
