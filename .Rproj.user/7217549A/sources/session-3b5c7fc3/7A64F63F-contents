@@ -12,10 +12,7 @@ format:
 execute:
   warning: false
   message: false
-
-
-
-
+---
 
 # Assignment Overview
 
@@ -307,11 +304,8 @@ knitr::kable(
 - Output format: wide
 - **Challenge:** You'll need county codes, not names. Look at the GEOID patterns in your county data for hints.
 
-
-# ---- 3.2: Tract-level demographics (percentages only) ----
-
 ```{r}
-# ---- 3.2: Tract-level demographics ----
+# ---- 3.2: Tract-level demographics (robust county naming via FIPS) ----
 
 # 1) Variables
 vars_tracts <- c(
@@ -321,37 +315,47 @@ vars_tracts <- c(
   total_pop = "B03002_001"   # Total population
 )
 
-# 2) Convert 5-digit county GEOIDs to 3-digit county FIPS
-county_codes3 <- stringr::str_sub(selected_counties$GEOID, -3, -1)
+# 2) 3-digit county FIPS from your selected counties (5-digit GEOID -> last 3)
+county_codes3 <- stringr::str_sub(selected_counties$GEOID, -3, -1) %>% unique()
 
-# (optional safety check)
-stopifnot(length(county_codes3) > 0, all(nchar(county_codes3) == 3))
-
-# 3) Pull tract-level ACS for those counties
-tract_raw <- get_acs(
+# 3) Pull ACS tract-level data
+tract_raw <- tidycensus::get_acs(
   geography = "tract",
   variables = vars_tracts,
-  year      = acs_year,   # you defined acs_year <- 2022 above
+  year      = acs_year,
   survey    = "acs5",
   state     = my_state,
-  county    = county_codes3,   # <-- 3-digit FIPS codes here
+  county    = county_codes3,
   output    = "wide"
 )
 
-# 4) Clean tract/county names and compute percentages
-# NAME is like: "Census Tract 123, Kings County, New York"
+# 4) Derive state/county FIPS from the tract GEOID and join to official names
+#    tract GEOID = SS + CCC + TTTTTT  (state 2, county 3, tract 6)
 tract_demo <- tract_raw %>%
-  tidyr::separate(NAME, c("tract_label","county_label","state_label"),
-                  sep = ", ", remove = FALSE) %>%
   dplyr::mutate(
-    tract_label  = stringr::str_remove(tract_label, "^Census Tract\\s*"),
-    county_label = stringr::str_remove(county_label, "\\s*County$"),
+    state_fips  = stringr::str_sub(GEOID, 1, 2),
+    county_fips = stringr::str_sub(GEOID, 3, 5),
+    tract_label = stringr::str_extract(NAME, "^Census Tract\\s*[^,]+") %>%
+                  stringr::str_remove("^Census Tract\\s*")
+  ) %>%
+  dplyr::left_join(
+    tidycensus::fips_codes %>%
+      dplyr::transmute(
+        state_fips  = state_code,
+        county_fips = county_code,
+        county_label = county,   # e.g., "Kings"
+        state_label  = state     # e.g., "New York"
+      ),
+    by = c("state_fips", "county_fips")
+  ) %>%
+  # 5) Compute percentages
+  dplyr::mutate(
     pct_white_nh = dplyr::if_else(total_popE > 0, 100 * white_nhE / total_popE, NA_real_),
     pct_black_nh = dplyr::if_else(total_popE > 0, 100 * black_nhE / total_popE, NA_real_),
     pct_hispanic = dplyr::if_else(total_popE > 0, 100 * hispanicE / total_popE, NA_real_)
   )
 
-# 5) Quick peek
+# Quick peek
 knitr::kable(
   tract_demo %>%
     dplyr::select(
@@ -364,15 +368,14 @@ knitr::kable(
   digits = 1
 )
 
-```
 
+```
 
 
 ## 3.3 Demographic Analysis
 
 **Your Task:** Analyze the demographic patterns in your selected areas.
 
-```{r demographic-analysis}
 # Find the tract with the highest percentage of Hispanic/Latino residents
 # Hint: use arrange() and slice() to get the top tract
 
@@ -380,52 +383,33 @@ knitr::kable(
 # Show: number of tracts, average percentage for each racial/ethnic group
 
 # Create a nicely formatted table of your results using kable()
-```
+
 ```{r}
 # ---- 3.3A: tract with highest % Hispanic ----
 top_hispanic_tract <- tract_demo %>%
+  dplyr::filter(!is.na(pct_hispanic)) %>%
   dplyr::arrange(dplyr::desc(pct_hispanic)) %>%
   dplyr::slice(1) %>%
-  dplyr::select(GEOID, tract_label, county_label,
-                total_popE, pct_white_nh, pct_black_nh, pct_hispanic)
-
-knitr::kable(top_hispanic_tract,
-             caption = "Tract with the highest % Hispanic")
-
-```
-```{r}
-# ---- 3.3B: summarize by county ----
-county_summary_weighted <- tract_demo %>%
-  dplyr::group_by(county_label) %>%
-  dplyr::summarise(
-    total_pop    = sum(total_popE, na.rm = TRUE),
-    white_nh     = sum(white_nhE, na.rm = TRUE),
-    black_nh     = sum(black_nhE, na.rm = TRUE),
-    hispanic     = sum(hispanicE, na.rm = TRUE),
-    n_tracts     = dplyr::n()
-  ) %>%
-  dplyr::mutate(
-    pct_white_nh = 100 * white_nh / total_pop,
-    pct_black_nh = 100 * black_nh / total_pop,
-    pct_hispanic = 100 * hispanic / total_pop
+  dplyr::select(
+    GEOID, tract_label, county_label,
+    total_popE, pct_white_nh, pct_black_nh, pct_hispanic
   )
 
-knitr::kable(county_summary_weighted,
-             digits = 1,
-             caption = "County-wide demographics (population-weighted)")
+knitr::kable(
+  top_hispanic_tract,
+  digits = c(0, 0, 0, 0, 1, 1, 1),
+  caption = "Tract with the highest % Hispanic"
+)
 
-```
-```{r}
-# ---- 3.3: Weighted county-level demographics ----
-
+# ---- 3.3B: summarize by county (population-weighted) ----
 county_summary_weighted <- tract_demo %>%
   dplyr::group_by(county_label) %>%
   dplyr::summarise(
-    total_pop    = sum(total_popE, na.rm = TRUE),
-    white_nh     = sum(white_nhE, na.rm = TRUE),
-    black_nh     = sum(black_nhE, na.rm = TRUE),
-    hispanic     = sum(hispanicE, na.rm = TRUE),
-    n_tracts     = dplyr::n(),
+    total_pop = sum(total_popE, na.rm = TRUE),
+    white_nh  = sum(white_nhE,  na.rm = TRUE),
+    black_nh  = sum(black_nhE,  na.rm = TRUE),
+    hispanic  = sum(hispanicE,  na.rm = TRUE),
+    n_tracts  = dplyr::n(),
     .groups = "drop"
   ) %>%
   dplyr::mutate(
@@ -448,7 +432,6 @@ knitr::kable(
 
 ```
 
-
 # Part 4: Comprehensive Data Quality Evaluation
 
 ## 4.1 MOE Analysis for Demographic Variables
@@ -460,7 +443,6 @@ knitr::kable(
 - Flag tracts where any demographic variable has MOE > 15%
 - Create summary statistics
 
-```{r demographic-moe}
 # Calculate MOE percentages for white, Black, and Hispanic variables
 # Hint: use the same formula as before (margin/estimate * 100)
 
@@ -468,59 +450,75 @@ knitr::kable(
 # Use logical operators (| for OR) in an ifelse() statement
 
 # Create summary statistics showing how many tracts have data quality issues
-```
+
 ```{r}
 # ---- 4.1: MOE analysis for demographic variables ----
 
+# Safety: ensure tract_demo exists
+stopifnot(exists("tract_demo"))
+
 tract_moe <- tract_demo %>%
   dplyr::mutate(
-    # MOE% for each group
-    white_moe_pct    = ifelse(white_nhE > 0, 100 * white_nhM / white_nhE, NA),
-    black_moe_pct    = ifelse(black_nhE > 0, 100 * black_nhM / black_nhE, NA),
-    hispanic_moe_pct = ifelse(hispanicE > 0, 100 * hispanicM / hispanicE, NA),
+    # MOE% for each group (only when estimate > 0 and MOE available)
+    white_moe_pct    = dplyr::if_else(!is.na(white_nhE)  & white_nhE  > 0 & !is.na(white_nhM),
+                                      100 * white_nhM  / white_nhE,  NA_real_),
+    black_moe_pct    = dplyr::if_else(!is.na(black_nhE)  & black_nhE  > 0 & !is.na(black_nhM),
+                                      100 * black_nhM  / black_nhE,  NA_real_),
+    hispanic_moe_pct = dplyr::if_else(!is.na(hispanicE)  & hispanicE  > 0 & !is.na(hispanicM),
+                                      100 * hispanicM  / hispanicE,  NA_real_),
 
-    # flag if any group’s MOE% > 15
-    high_moe_flag = (white_moe_pct > 15) | (black_moe_pct > 15) | (hispanic_moe_pct > 15)
+    # Per-group >15% flags
+    over15_white = white_moe_pct    > 15,
+    over15_black = black_moe_pct    > 15,
+    over15_hisp  = hispanic_moe_pct > 15,
+
+    # Any group over threshold
+    high_moe_flag = over15_white | over15_black | over15_hisp
   )
 
-# summary of how many tracts have high MOE issues
+# Overall summary
 tract_moe_summary <- tract_moe %>%
   dplyr::summarise(
-    total_tracts = dplyr::n(),
+    total_tracts    = dplyr::n(),
     high_moe_tracts = sum(high_moe_flag, na.rm = TRUE),
-    pct_high_moe = 100 * high_moe_tracts / total_tracts
+    pct_high_moe    = round(100 * high_moe_tracts / total_tracts, 1),
+    # count tracts where at least one MOE% couldn't be computed
+    any_moe_na      = sum(is.na(white_moe_pct) | is.na(black_moe_pct) | is.na(hispanic_moe_pct))
   )
 
-knitr::kable(tract_moe_summary,
-             digits = 1,
-             caption = "Summary of high-MOE tracts (ACS 2018–2022 5-year)")
+knitr::kable(
+  tract_moe_summary,
+  digits = 1,
+  caption = "Summary of high-MOE tracts (ACS 2018–2022 5-year)"
+)
 
 ```
+
+
 
 ## 4.2 Pattern Analysis
 
 **Your Task:** Investigate whether data quality problems are randomly distributed or concentrated in certain types of communities.
 
-```{r pattern-analysis}
 # Group tracts by whether they have high MOE issues
 # Calculate average characteristics for each group:
 # - population size, demographic percentages
 
 # Use group_by() and summarize() to create this comparison
 # Create a professional table showing the patterns
-```
+
 
 ```{r}
-# ---- 4.2: Pattern analysis ----
+# ---- 4.2A: Compare tracts with vs. without high MOE issues ----
 
 pattern_analysis <- tract_moe %>%
   dplyr::group_by(high_moe_flag) %>%
   dplyr::summarise(
-    n_tracts        = dplyr::n(),
-    avg_pop         = mean(total_popE, na.rm = TRUE),
-    avg_pct_white   = mean(pct_white_nh, na.rm = TRUE),
-    avg_pct_black   = mean(pct_black_nh, na.rm = TRUE),
-    avg_pct_hispanic= mean(pct_hispanic, na.rm = TRUE),
+    n_tracts         = dplyr::n(),
+    avg_pop          = mean(total_popE, na.rm = TRUE),
+    avg_pct_white    = mean(pct_white_nh, na.rm = TRUE),
+    avg_pct_black    = mean(pct_black_nh, na.rm = TRUE),
+    avg_pct_hispanic = mean(pct_hispanic, na.rm = TRUE),
     .groups = "drop"
   )
 
@@ -532,25 +530,26 @@ knitr::kable(
   caption = "Comparison of tracts with vs. without high MOE issues"
 )
 
-```
-```{r}
-# ---- 4.2: Count flags per group by county ----
+# ---- 4.2B: Count MOE>15% flags by county ----
 
-flags_by_county <- tract_moe2 %>%
+flags_by_county <- tract_moe %>%
   dplyr::group_by(county_label) %>%
   dplyr::summarise(
     white_flags    = sum(over15_white,    na.rm = TRUE),
     black_flags    = sum(over15_black,    na.rm = TRUE),
     hispanic_flags = sum(over15_hisp,     na.rm = TRUE),
     total_tracts   = dplyr::n(),
+    any_high_moe   = sum(high_moe_flag,   na.rm = TRUE),
+    pct_flagged    = round(100 * any_high_moe / total_tracts, 1),
     .groups = "drop"
-  )
+  ) %>%
+  dplyr::arrange(dplyr::desc(pct_flagged))
 
 knitr::kable(
   flags_by_county,
-  caption = "Number of tracts with MOE% > 15% for each group, by county"
+  digits = 1,
+  caption = "Tracts with MOE% > 15% by county (counts and % of tracts flagged)"
 )
-
 
 ```
 
@@ -572,7 +571,13 @@ knitr::kable(
 
 **Executive Summary:**
 
-[Your integrated 4-paragraph summary here]
+This analysis of American Community Survey (ACS) data for New York counties reveals a striking divergence between county-level reliability and tract-level detail. At the county scale, median household income estimates are generally robust: the majority of counties fall within the “High Confidence” category (MOE < 5%), and even in New York City’s Kings County the median income estimate is highly reliable. However, when we move to tract-level race and ethnicity measures, margins of error grow dramatically. Across the selected counties, nearly all tracts report at least one racial/ethnic estimate with MOE greater than 15%, demonstrating that while income data is dependable for algorithmic policy use, subgroup demographic data is far more uncertain.
+
+The communities most at risk of algorithmic bias differ by geography. In rural counties such as Greene and Hamilton, small minority populations produce unstable estimates, leading to systematically unreliable data for Black and Hispanic residents. In contrast, in large urban counties like Kings, data quality issues are not confined to minority groups—margins of error are high for nearly all racial/ethnic categories. Thus, while statewide income thresholds could be applied equitably, any algorithm that targets resources based on racial composition at the tract level risks disproportionately misclassifying both rural minority communities and dense urban neighborhoods.
+
+The root causes of these quality issues stem from the ACS’s design. The survey is sample-based, and smaller geographies such as census tracts often have limited sample sizes. This yields stable estimates for broadly distributed characteristics like total population or income, but highly uncertain estimates for smaller subgroups. The result is that variables most relevant to equity and inclusion—race and ethnicity—are precisely those with the least reliable data. This structural limitation increases the risk that automated decision-making systems will entrench inequities rather than reduce them.
+
+To mitigate these risks, the Department should adopt a layered strategy. First, continue to use county-level median income data for resource allocation, where confidence is high. Second, treat tract-level demographic estimates with caution: use them only in conjunction with safeguards such as minimum population thresholds or higher-level geographic aggregation. Third, flag tracts where margins of error exceed set thresholds for manual review rather than algorithmic assignment. Finally, pair ACS data with supplemental sources—administrative records, local surveys, or community-based reporting—to ensure that equity-sensitive decisions are not based solely on unreliable estimates. Taken together, these measures will allow the Department to leverage ACS data responsibly while minimizing the risks of algorithmic biase
 
 ## 6.3 Specific Recommendations
 
@@ -594,32 +599,65 @@ knitr::kable(
 
 **Your Task:** Use your analysis results to provide specific guidance to the department.
 
-1. **Counties suitable for immediate algorithmic implementation:** [List counties with high confidence data and explain why they're appropriate]
+1. **Counties suitable for immediate algorithmic implementation:** Counties with High Confidence median income data, such as Kings County, are appropriate for algorithmic targeting when the policy is tied to income thresholds. Median household income estimates here have margins of error well under 5%, which provides sufficient reliability for resource allocation decisions. However, even in these counties, subgroup race/ethnicity estimates should not be used as standalone inputs given their high margins of error.
 
-2. **Counties requiring additional oversight:** [List counties with moderate confidence data and describe what kind of monitoring would be needed]
+2. **Counties requiring additional oversight:** Counties with Moderate Confidence income estimates, such as Greene County, can be incorporated into algorithmic systems only with safeguards. Algorithms should flag Greene’s tracts for periodic review and be supplemented with monitoring of outcomes to ensure that borderline or unstable estimates do not result in systematic underfunding. Oversight might include comparing ACS estimates with administrative data or community-level surveys on a recurring basis.
 
-3. **Counties needing alternative approaches:** [List counties with low confidence data and suggest specific alternatives - manual review, additional surveys, etc.]
+3. **Counties needing alternative approaches:** Counties with Low Confidence data, such as Hamilton County, should not be subject to fully automated decision-making. Here, the small population base yields large margins of error that make both income and subgroup data unreliable. Policy in these counties should rely on manual review, qualitative assessments from local agencies, or additional data collection (e.g., oversampling or local needs assessments) before allocating funds
 
 ## Questions for Further Investigation
 
 [List 2-3 questions that your analysis raised that you'd like to explore further in future assignments. Consider questions about spatial patterns, time trends, or other demographic factors.]
 
+1. Spatial patterns: Do tracts with high MOE cluster geographically (e.g., in rural versus urban areas), and how might these clusters bias statewide resource allocation?
+
+2. Time trends: How stable are ACS estimates over multiple 5-year periods, and could temporal averaging reduce the volatility of tract-level race/ethnicity estimates?
+
+3. Alternative data sources: Could administrative records (e.g., SNAP enrollment, school free-lunch participation) provide more reliable indicators of local need than ACS tract-level subgroup data?
+
 # Technical Notes
 
-**Data Sources:** 
-- U.S. Census Bureau, American Community Survey 2018-2022 5-Year Estimates
-- Retrieved via tidycensus R package on [date]
+#Data Sources:
 
-**Reproducibility:** 
-- All analysis conducted in R version [your version]
-- Census API key required for replication
-- Complete code and documentation available at: [your portfolio URL]
+U.S. Census Bureau, American Community Survey (ACS) 2018–2022 5-Year Estimates
 
-**Methodology Notes:**
-[Describe any decisions you made about data processing, county selection, or analytical choices that might affect reproducibility]
+Data retrieved using the tidycensus R package on 4.5.1
 
-**Limitations:**
-[Note any limitations in your analysis - sample size issues, geographic scope, temporal factors, etc.]
+#Reproducibility:
+
+All analysis conducted in R version [insert version, e.g., 4.3.2]
+
+Required packages: tidycensus, tidyverse, knitr, stringr
+
+A valid Census API key is required; results can be replicated by loading the same variables and geographies for ACS 5-year 2022
+
+Complete code and documentation are available at: [your portfolio URL]
+
+#Methodology Notes:
+
+County-level income and population estimates were retrieved in “wide” format to simplify margin of error calculations.
+
+Reliability categories were created using thresholds (<5% = High, 5–10% = Moderate, >10% = Low).
+
+Counties were selected for tract-level analysis to represent different reliability levels (Kings = high, Greene = moderate, Hamilton = low).
+
+Tract-level race/ethnicity percentages were calculated by dividing group counts by total population, then multiplying by 100.
+
+County labels for tracts were assigned using official FIPS codes rather than string parsing to avoid NA parsing issues.
+
+High MOE flags were set at 15% for subgroup demographics, following common practice in ACS data quality analysis.
+
+#Limitations:
+
+ACS estimates are based on sample surveys and are subject to sampling error; margins of error can be especially large for small populations and detailed subgroups.
+
+Tract-level data for race/ethnicity is particularly volatile; nearly all tracts in Kings County showed MOE% > 15%.
+
+Rural counties (e.g., Hamilton) have very small populations, making subgroup estimates unreliable or unavailable.
+
+Temporal limitations: results are based on the 2018–2022 5-year ACS and may not reflect more recent economic or demographic shifts.
+
+Geographic limitations: analysis focused on New York; findings may not generalize to other states without adjustment for local context.
 
 ---
 
