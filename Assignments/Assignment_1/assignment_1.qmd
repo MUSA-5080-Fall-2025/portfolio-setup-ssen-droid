@@ -632,9 +632,8 @@ knitr::kable(
   decision_tbl,
   caption = "Decision Framework for Algorithm Implementation (ACS 2022 5-year)"
 )
-
-
 ```
+
 
 
 **Key Recommendations:**
