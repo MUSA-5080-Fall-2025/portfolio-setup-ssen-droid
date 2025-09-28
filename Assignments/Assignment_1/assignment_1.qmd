@@ -18,7 +18,7 @@ execute:
 
 ## Scenario
 
-You are a data analyst for the **[Your State] Department of Human Services**. The department is considering implementing an algorithmic system to identify communities that should receive priority for social service funding and outreach programs. Your supervisor has asked you to evaluate the quality and reliability of available census data to inform this decision.
+You are a data analyst for the New York Department of Human Services. The department is considering implementing an algorithmic system to identify communities that should receive priority for social service funding and outreach programs. Your supervisor has asked you to evaluate the quality and reliability of available census data to inform this decision.
 
 Drawing on our Week 2 discussion of algorithmic bias, you need to assess not just what the data shows, but how reliable it is and what communities might be affected by data quality issues.
 
@@ -128,6 +128,7 @@ knitr::kable(
   caption = paste("County-level ACS (2022 5-year) for", my_state),
   digits = 0
 )
+
 
 ```
 
@@ -251,7 +252,7 @@ knitr::kable(
 
 **Data Quality Commentary:**
 
-[The counties that have higher % reliability are likley to benefit less from algorthmic decision making. These margins of error are too large to give us high confidence in the median income figures. Therefore, algorithms that use this data may cause harm. For example, if the state decides that counties that have <$60K median income will receive social services, Hamilton looks like it's well above this threshold but with such a high margin of error this may not be the case.]
+[The counties that have higher % reliability are likely to benefit less from algorithmic decision making. These margins of error are too large to give us high confidence in the median income figures. Therefore, algorithms that use this data may cause harm. For example, if the state decides that counties that have <$60K median income will receive social services, Hamilton looks like it's well above this threshold but with such a high margin of error this may not be the case.]
 
 # Part 3: Neighborhood-Level Analysis
 
@@ -267,13 +268,31 @@ knitr::kable(
 
 # Display the selected counties with their key characteristics
 # Show: county name, median income, MOE percentage, reliability category
+
+county_reliability %>%
+  dplyr::select(county, med_incomeE, income_moe_pct, reliability) %>%
+  dplyr::arrange(income_moe_pct)
+
+```
+```{r}
+# ---- 3.1: pick counties for tract-level study ----
+selected_counties <- county_reliability %>%
+  dplyr::filter(county %in% c("Kings", "Greene", "Hamilton")) %>%
+  dplyr::select(county, GEOID, med_incomeE, income_moe_pct, reliability)
+
+knitr::kable(
+  selected_counties,
+  caption = "Selected counties for tract-level analysis"
+)
+
 ```
 
-**Comment on the output:** [write something :)]
+**Comment on the output:** Only one county in New York is low confidence with regard to MOE - Hamilton, NY. This is likley due to extremely small population size coupled with small sample perhaps. 
 
 ## 3.2 Tract-Level Demographics
 
 **Your Task:** Get demographic data for census tracts in your selected counties.
+
 
 **Requirements:**
 - Geography: tract level
@@ -282,17 +301,44 @@ knitr::kable(
 - Output format: wide
 - **Challenge:** You'll need county codes, not names. Look at the GEOID patterns in your county data for hints.
 
-```{r tract-demographics}
-# Define your race/ethnicity variables with descriptive names
 
-# Use get_acs() to retrieve tract-level data
-# Hint: You may need to specify county codes in the county parameter
+```{r}
+# ---- 3.2: Tract-level demographics (percentages only) ----
 
-# Calculate percentage of each group using mutate()
-# Create percentages for white, Black, and Hispanic populations
+# Calculate population percentages for each tract
+tract_demo <- tract_raw %>%
+  dplyr::mutate(
+    pct_white_nh = ifelse(total_popE > 0, 100 * white_nhE / total_popE, NA),
+    pct_black_nh = ifelse(total_popE > 0, 100 * black_nhE / total_popE, NA),
+    pct_hispanic = ifelse(total_popE > 0, 100 * hispanicE / total_popE, NA)
+  ) %>%
+  dplyr::mutate(
+    tract_label  = stringr::str_extract(NAME, "^Census Tract\\s*[^,;]+"),
+    county_label = NAME %>%
+      stringr::str_extract("[,;]\\s*[^,;]+\\s*County") %>%
+      stringr::str_replace_all("^[,;]\\s*|\\s*County$", "") %>%
+      stringr::str_trim()
+  )
 
-# Add readable tract and county name columns using str_extract() or similar
+# Preview a few rows
+knitr::kable(
+  tract_demo %>%
+    dplyr::select(
+      GEOID, tract_label, county_label,
+      total_popE, white_nhE, pct_white_nh,
+      black_nhE, pct_black_nh,
+      hispanicE, pct_hispanic
+    ) %>%
+    head(10),
+  caption = "Tract demographics with population percentages (first 10 rows)",
+  digits = 1
+)
+
+View(tract_demo)
+
 ```
+
+
 
 ## 3.3 Demographic Analysis
 
@@ -307,6 +353,73 @@ knitr::kable(
 
 # Create a nicely formatted table of your results using kable()
 ```
+```{r}
+# ---- 3.3A: tract with highest % Hispanic ----
+top_hispanic_tract <- tract_demo %>%
+  dplyr::arrange(dplyr::desc(pct_hispanic)) %>%
+  dplyr::slice(1) %>%
+  dplyr::select(GEOID, tract_label, county_label,
+                total_popE, pct_white_nh, pct_black_nh, pct_hispanic)
+
+knitr::kable(top_hispanic_tract,
+             caption = "Tract with the highest % Hispanic")
+
+```
+```{r}
+# ---- 3.3B: summarize by county ----
+county_summary_weighted <- tract_demo %>%
+  dplyr::group_by(county_label) %>%
+  dplyr::summarise(
+    total_pop    = sum(total_popE, na.rm = TRUE),
+    white_nh     = sum(white_nhE, na.rm = TRUE),
+    black_nh     = sum(black_nhE, na.rm = TRUE),
+    hispanic     = sum(hispanicE, na.rm = TRUE),
+    n_tracts     = dplyr::n()
+  ) %>%
+  dplyr::mutate(
+    pct_white_nh = 100 * white_nh / total_pop,
+    pct_black_nh = 100 * black_nh / total_pop,
+    pct_hispanic = 100 * hispanic / total_pop
+  )
+
+knitr::kable(county_summary_weighted,
+             digits = 1,
+             caption = "County-wide demographics (population-weighted)")
+
+```
+```{r}
+# ---- 3.3: Weighted county-level demographics ----
+
+county_summary_weighted <- tract_demo %>%
+  dplyr::group_by(county_label) %>%
+  dplyr::summarise(
+    total_pop    = sum(total_popE, na.rm = TRUE),
+    white_nh     = sum(white_nhE, na.rm = TRUE),
+    black_nh     = sum(black_nhE, na.rm = TRUE),
+    hispanic     = sum(hispanicE, na.rm = TRUE),
+    n_tracts     = dplyr::n(),
+    .groups = "drop"
+  ) %>%
+  dplyr::mutate(
+    pct_white_nh = 100 * white_nh / total_pop,
+    pct_black_nh = 100 * black_nh / total_pop,
+    pct_hispanic = 100 * hispanic / total_pop
+  ) %>%
+  dplyr::select(
+    county_label, n_tracts, total_pop,
+    pct_white_nh, pct_black_nh, pct_hispanic
+  )
+
+knitr::kable(
+  county_summary_weighted,
+  digits = c(0, 0, 0, 1, 1, 1),
+  col.names = c("County", "Tracts", "Population",
+                "% White (NH)", "% Black (NH)", "% Hispanic"),
+  caption = "County-wide demographics (ACS 2018–2022 5-year, weighted by population)"
+)
+
+```
+
 
 # Part 4: Comprehensive Data Quality Evaluation
 
@@ -327,6 +440,9 @@ knitr::kable(
 # Use logical operators (| for OR) in an ifelse() statement
 
 # Create summary statistics showing how many tracts have data quality issues
+```
+```{r}
+
 ```
 
 ## 4.2 Pattern Analysis
@@ -423,3 +539,4 @@ Before submitting your portfolio link on Canvas:
 - [ ] Document renders correctly to HTML
 
 **Remember:** Submit your portfolio URL on Canvas, not the file itself. Your assignment should be accessible at `your-portfolio-url/assignments/assignment_1/your_file_name.html`
+
