@@ -376,13 +376,13 @@ knitr::kable(
 
 **Your Task:** Analyze the demographic patterns in your selected areas.
 
-# Find the tract with the highest percentage of Hispanic/Latino residents
-# Hint: use arrange() and slice() to get the top tract
+ Find the tract with the highest percentage of Hispanic/Latino residents
+ Hint: use arrange() and slice() to get the top tract
 
-# Calculate average demographics by county using group_by() and summarize()
-# Show: number of tracts, average percentage for each racial/ethnic group
+ Calculate average demographics by county using group_by() and summarize()
+ Show: number of tracts, average percentage for each racial/ethnic group
 
-# Create a nicely formatted table of your results using kable()
+ Create a nicely formatted table of your results using kable()
 
 ```{r}
 # ---- 3.3A: tract with highest % Hispanic ----
@@ -443,13 +443,13 @@ knitr::kable(
 - Flag tracts where any demographic variable has MOE > 15%
 - Create summary statistics
 
-# Calculate MOE percentages for white, Black, and Hispanic variables
-# Hint: use the same formula as before (margin/estimate * 100)
+ Calculate MOE percentages for white, Black, and Hispanic variables
+ Hint: use the same formula as before (margin/estimate * 100)
 
-# Create a flag for tracts with high MOE on any demographic variable
-# Use logical operators (| for OR) in an ifelse() statement
+ Create a flag for tracts with high MOE on any demographic variable
+ Use logical operators (| for OR) in an ifelse() statement
 
-# Create summary statistics showing how many tracts have data quality issues
+ Create summary statistics showing how many tracts have data quality issues
 
 ```{r}
 # ---- 4.1: MOE analysis for demographic variables ----
@@ -500,12 +500,12 @@ knitr::kable(
 
 **Your Task:** Investigate whether data quality problems are randomly distributed or concentrated in certain types of communities.
 
-# Group tracts by whether they have high MOE issues
-# Calculate average characteristics for each group:
-# - population size, demographic percentages
+ Group tracts by whether they have high MOE issues
+ Calculate average characteristics for each group:
+ - population size, demographic percentages
 
-# Use group_by() and summarize() to create this comparison
-# Create a professional table showing the patterns
+ Use group_by() and summarize() to create this comparison
+ Create a professional table showing the patterns
 
 
 ```{r}
@@ -615,15 +615,15 @@ To mitigate these risks, the Department should adopt a layered strategy. First, 
 
 3. Alternative data sources: Could administrative records (e.g., SNAP enrollment, school free-lunch participation) provide more reliable indicators of local need than ACS tract-level subgroup data?
 
-# Technical Notes
+## Technical Notes
 
-#Data Sources:
+# Data Sources:
 
 U.S. Census Bureau, American Community Survey (ACS) 2018–2022 5-Year Estimates
 
 Data retrieved using the tidycensus R package on 4.5.1
 
-#Reproducibility:
+# Reproducibility:
 
 All analysis conducted in R version [insert version, e.g., 4.3.2]
 
@@ -633,7 +633,7 @@ A valid Census API key is required; results can be replicated by loading the sam
 
 Complete code and documentation are available at: [your portfolio URL]
 
-#Methodology Notes:
+# Methodology Notes:
 
 County-level income and population estimates were retrieved in “wide” format to simplify margin of error calculations.
 
@@ -647,7 +647,7 @@ County labels for tracts were assigned using official FIPS codes rather than str
 
 High MOE flags were set at 15% for subgroup demographics, following common practice in ACS data quality analysis.
 
-#Limitations:
+# Limitations:
 
 ACS estimates are based on sample surveys and are subject to sampling error; margins of error can be especially large for small populations and detailed subgroups.
 

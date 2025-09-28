@@ -1,0 +1,5 @@
+"0","# Load required packages (hint: you need tidycensus, tidyverse, and knitr)"
+"0",""
+"0","# Set your Census API key"
+"0",""
+"0","# Choose your state for analysis - assign it to a variable called my_state"
