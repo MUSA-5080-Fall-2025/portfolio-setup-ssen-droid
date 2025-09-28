@@ -243,13 +243,15 @@ top5_uncertainty <- county_reliability %>%
     `Median income ($)` = med_incomeE,
     `Income MOE ($)`    = med_incomeM,
     `Income MOE %`      = sprintf("%.1f%%", income_moe_pct),
-    Reliability         = reliability
+     Reliability        = reliability
   )
 
 knitr::kable(
   top5_uncertainty,
   caption = "Top 5 counties by median income MOE% (ACS 2022 5-year)"
-)
+) %>%
+  kableExtra::kable_styling(full_width = FALSE, bootstrap_options = c("striped", "hover"))
+
 
 ```
 
