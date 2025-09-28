@@ -1,4 +1,0 @@
-"0","# Calculate MOE percentage and reliability categories using mutate()"
-"0",""
-"0","# Create a summary showing count of counties in each reliability category"
-"0","# Hint: use count() and mutate() to add percentages"

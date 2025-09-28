@@ -1,6 +1,0 @@
-"0","# Write your get_acs() code here"
-"0",""
-"0","# Clean the county names to remove state name and ""County"" "
-"0","# Hint: use mutate() with str_remove()"
-"0",""
-"0","# Display the first few rows"
