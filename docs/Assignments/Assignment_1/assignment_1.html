@@ -1500,6 +1500,506 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Format as a professional table with kable()</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- Decision framework table (minimal + robust) ----</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>decision_tbl <span class="ot">&lt;-</span> county_reliability <span class="sc">%&gt;%</span></span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>  <span class="co"># keep rows where we can actually decide something</span></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(med_incomeE), <span class="sc">!</span><span class="fu">is.na</span>(income_moe_pct)) <span class="sc">%&gt;%</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="co"># If your data already has `reliability`, we’ll use it; otherwise derive it from MOE%</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">reliability =</span> <span class="fu">case_when</span>(</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>      <span class="sc">!</span><span class="fu">is.na</span>(reliability) <span class="sc">~</span> reliability,</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>      income_moe_pct <span class="sc">&lt;=</span> <span class="dv">5</span>     <span class="sc">~</span> <span class="st">"High Confidence"</span>,</span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>      income_moe_pct <span class="sc">&lt;=</span> <span class="dv">10</span>    <span class="sc">~</span> <span class="st">"Moderate Confidence"</span>,</span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span>                    <span class="sc">~</span> <span class="st">"Low Confidence"</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb21-16"><a href="#cb21-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Map reliability -&gt; implementation recommendation</span></span>
+<span id="cb21-17"><a href="#cb21-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">recommendation =</span> <span class="fu">case_when</span>(</span>
+<span id="cb21-18"><a href="#cb21-18" aria-hidden="true" tabindex="-1"></a>      reliability <span class="sc">==</span> <span class="st">"High Confidence"</span>      <span class="sc">~</span> <span class="st">"Safe for algorithmic decisions"</span>,</span>
+<span id="cb21-19"><a href="#cb21-19" aria-hidden="true" tabindex="-1"></a>      reliability <span class="sc">==</span> <span class="st">"Moderate Confidence"</span>  <span class="sc">~</span> <span class="st">"Use with caution - monitor outcomes"</span>,</span>
+<span id="cb21-20"><a href="#cb21-20" aria-hidden="true" tabindex="-1"></a>      reliability <span class="sc">==</span> <span class="st">"Low Confidence"</span>       <span class="sc">~</span> <span class="st">"Requires manual review or additional data"</span>,</span>
+<span id="cb21-21"><a href="#cb21-21" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span>                                  <span class="sc">~</span> <span class="st">"Review needed"</span></span>
+<span id="cb21-22"><a href="#cb21-22" aria-hidden="true" tabindex="-1"></a>    ),</span>
+<span id="cb21-23"><a href="#cb21-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Pretty formatting for display only</span></span>
+<span id="cb21-24"><a href="#cb21-24" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Median income ($)</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">formatC</span>(med_incomeE, <span class="at">format =</span> <span class="st">"f"</span>, <span class="at">digits =</span> <span class="dv">0</span>, <span class="at">big.mark =</span> <span class="st">","</span>),</span>
+<span id="cb21-25"><a href="#cb21-25" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Income MOE %</span><span class="st">`</span> <span class="ot">=</span> <span class="fu">sprintf</span>(<span class="st">"%.1f%%"</span>, income_moe_pct),</span>
+<span id="cb21-26"><a href="#cb21-26" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Order rows by reliability (High → Moderate → Low)</span></span>
+<span id="cb21-27"><a href="#cb21-27" aria-hidden="true" tabindex="-1"></a>    <span class="at">reliability =</span> <span class="fu">factor</span>(reliability, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"High Confidence"</span>,<span class="st">"Moderate Confidence"</span>,<span class="st">"Low Confidence"</span>))</span>
+<span id="cb21-28"><a href="#cb21-28" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb21-29"><a href="#cb21-29" aria-hidden="true" tabindex="-1"></a>  <span class="fu">transmute</span>(</span>
+<span id="cb21-30"><a href="#cb21-30" aria-hidden="true" tabindex="-1"></a>    <span class="at">County =</span> county,</span>
+<span id="cb21-31"><a href="#cb21-31" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Median income ($)</span><span class="st">`</span>,</span>
+<span id="cb21-32"><a href="#cb21-32" aria-hidden="true" tabindex="-1"></a>    <span class="st">`</span><span class="at">Income MOE %</span><span class="st">`</span>,</span>
+<span id="cb21-33"><a href="#cb21-33" aria-hidden="true" tabindex="-1"></a>    <span class="at">Reliability =</span> reliability,</span>
+<span id="cb21-34"><a href="#cb21-34" aria-hidden="true" tabindex="-1"></a>    <span class="at">Recommendation =</span> recommendation</span>
+<span id="cb21-35"><a href="#cb21-35" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb21-36"><a href="#cb21-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(Reliability, County)</span>
+<span id="cb21-37"><a href="#cb21-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-38"><a href="#cb21-38" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(</span>
+<span id="cb21-39"><a href="#cb21-39" aria-hidden="true" tabindex="-1"></a>  decision_tbl,</span>
+<span id="cb21-40"><a href="#cb21-40" aria-hidden="true" tabindex="-1"></a>  <span class="at">caption =</span> <span class="st">"Decision Framework for Algorithm Implementation (ACS 2022 5-year)"</span></span>
+<span id="cb21-41"><a href="#cb21-41" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Decision Framework for Algorithm Implementation (ACS 2022 5-year)</caption>
+<colgroup>
+<col style="width: 12%">
+<col style="width: 16%">
+<col style="width: 12%">
+<col style="width: 18%">
+<col style="width: 39%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">County</th>
+<th style="text-align: left;">Median income ($)</th>
+<th style="text-align: left;">Income MOE %</th>
+<th style="text-align: left;">Reliability</th>
+<th style="text-align: left;">Recommendation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Albany</td>
+<td style="text-align: left;">78,829</td>
+<td style="text-align: left;">2.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Allegany</td>
+<td style="text-align: left;">58,725</td>
+<td style="text-align: left;">3.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Bronx</td>
+<td style="text-align: left;">47,036</td>
+<td style="text-align: left;">1.9%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Broome</td>
+<td style="text-align: left;">58,317</td>
+<td style="text-align: left;">3.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Cattaraugus</td>
+<td style="text-align: left;">56,889</td>
+<td style="text-align: left;">3.1%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cayuga</td>
+<td style="text-align: left;">63,227</td>
+<td style="text-align: left;">4.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Chautauqua</td>
+<td style="text-align: left;">54,625</td>
+<td style="text-align: left;">3.2%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Chemung</td>
+<td style="text-align: left;">61,358</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Chenango</td>
+<td style="text-align: left;">61,741</td>
+<td style="text-align: left;">4.1%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Clinton</td>
+<td style="text-align: left;">67,097</td>
+<td style="text-align: left;">4.2%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Columbia</td>
+<td style="text-align: left;">81,741</td>
+<td style="text-align: left;">3.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Cortland</td>
+<td style="text-align: left;">65,029</td>
+<td style="text-align: left;">4.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Delaware</td>
+<td style="text-align: left;">58,338</td>
+<td style="text-align: left;">3.7%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Dutchess</td>
+<td style="text-align: left;">94,578</td>
+<td style="text-align: left;">2.7%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Erie</td>
+<td style="text-align: left;">68,014</td>
+<td style="text-align: left;">1.2%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Franklin</td>
+<td style="text-align: left;">60,270</td>
+<td style="text-align: left;">4.8%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Fulton</td>
+<td style="text-align: left;">60,557</td>
+<td style="text-align: left;">4.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Genesee</td>
+<td style="text-align: left;">68,178</td>
+<td style="text-align: left;">4.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Herkimer</td>
+<td style="text-align: left;">68,104</td>
+<td style="text-align: left;">4.8%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Jefferson</td>
+<td style="text-align: left;">62,782</td>
+<td style="text-align: left;">3.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Kings</td>
+<td style="text-align: left;">74,692</td>
+<td style="text-align: left;">1.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Lewis</td>
+<td style="text-align: left;">64,401</td>
+<td style="text-align: left;">4.2%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Livingston</td>
+<td style="text-align: left;">70,443</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Madison</td>
+<td style="text-align: left;">68,869</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Monroe</td>
+<td style="text-align: left;">71,450</td>
+<td style="text-align: left;">1.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Montgomery</td>
+<td style="text-align: left;">58,033</td>
+<td style="text-align: left;">3.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Nassau</td>
+<td style="text-align: left;">137,709</td>
+<td style="text-align: left;">1.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">New York</td>
+<td style="text-align: left;">99,880</td>
+<td style="text-align: left;">1.8%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Niagara</td>
+<td style="text-align: left;">65,882</td>
+<td style="text-align: left;">2.7%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Oneida</td>
+<td style="text-align: left;">66,402</td>
+<td style="text-align: left;">3.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Onondaga</td>
+<td style="text-align: left;">71,479</td>
+<td style="text-align: left;">1.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Ontario</td>
+<td style="text-align: left;">76,603</td>
+<td style="text-align: left;">2.9%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Orange</td>
+<td style="text-align: left;">91,806</td>
+<td style="text-align: left;">1.9%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Orleans</td>
+<td style="text-align: left;">61,069</td>
+<td style="text-align: left;">4.9%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Oswego</td>
+<td style="text-align: left;">65,054</td>
+<td style="text-align: left;">3.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Otsego</td>
+<td style="text-align: left;">65,778</td>
+<td style="text-align: left;">4.5%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Putnam</td>
+<td style="text-align: left;">120,970</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Queens</td>
+<td style="text-align: left;">82,431</td>
+<td style="text-align: left;">1.1%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Rensselaer</td>
+<td style="text-align: left;">83,734</td>
+<td style="text-align: left;">2.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Richmond</td>
+<td style="text-align: left;">96,185</td>
+<td style="text-align: left;">2.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Rockland</td>
+<td style="text-align: left;">106,173</td>
+<td style="text-align: left;">2.9%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Saratoga</td>
+<td style="text-align: left;">97,038</td>
+<td style="text-align: left;">2.3%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Schenectady</td>
+<td style="text-align: left;">75,056</td>
+<td style="text-align: left;">3.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Schoharie</td>
+<td style="text-align: left;">71,479</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">St.&nbsp;Lawrence</td>
+<td style="text-align: left;">58,339</td>
+<td style="text-align: left;">3.5%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Steuben</td>
+<td style="text-align: left;">62,506</td>
+<td style="text-align: left;">2.9%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Suffolk</td>
+<td style="text-align: left;">122,498</td>
+<td style="text-align: left;">1.2%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Sullivan</td>
+<td style="text-align: left;">67,841</td>
+<td style="text-align: left;">4.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Tioga</td>
+<td style="text-align: left;">70,427</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Tompkins</td>
+<td style="text-align: left;">69,995</td>
+<td style="text-align: left;">4.0%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Ulster</td>
+<td style="text-align: left;">77,197</td>
+<td style="text-align: left;">4.5%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Warren</td>
+<td style="text-align: left;">74,531</td>
+<td style="text-align: left;">4.7%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Washington</td>
+<td style="text-align: left;">68,703</td>
+<td style="text-align: left;">3.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Wayne</td>
+<td style="text-align: left;">71,007</td>
+<td style="text-align: left;">3.1%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Westchester</td>
+<td style="text-align: left;">114,651</td>
+<td style="text-align: left;">1.6%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Wyoming</td>
+<td style="text-align: left;">65,066</td>
+<td style="text-align: left;">3.4%</td>
+<td style="text-align: left;">High Confidence</td>
+<td style="text-align: left;">Safe for algorithmic decisions</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Essex</td>
+<td style="text-align: left;">68,090</td>
+<td style="text-align: left;">5.3%</td>
+<td style="text-align: left;">Moderate Confidence</td>
+<td style="text-align: left;">Use with caution - monitor outcomes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Greene</td>
+<td style="text-align: left;">70,294</td>
+<td style="text-align: left;">6.2%</td>
+<td style="text-align: left;">Moderate Confidence</td>
+<td style="text-align: left;">Use with caution - monitor outcomes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Schuyler</td>
+<td style="text-align: left;">61,316</td>
+<td style="text-align: left;">9.5%</td>
+<td style="text-align: left;">Moderate Confidence</td>
+<td style="text-align: left;">Use with caution - monitor outcomes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Seneca</td>
+<td style="text-align: left;">64,050</td>
+<td style="text-align: left;">5.2%</td>
+<td style="text-align: left;">Moderate Confidence</td>
+<td style="text-align: left;">Use with caution - monitor outcomes</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Yates</td>
+<td style="text-align: left;">63,974</td>
+<td style="text-align: left;">5.8%</td>
+<td style="text-align: left;">Moderate Confidence</td>
+<td style="text-align: left;">Use with caution - monitor outcomes</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Hamilton</td>
+<td style="text-align: left;">66,891</td>
+<td style="text-align: left;">11.4%</td>
+<td style="text-align: left;">Low Confidence</td>
+<td style="text-align: left;">Requires manual review or additional data</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p><strong>Key Recommendations:</strong></p>
 <p><strong>Your Task:</strong> Use your analysis results to provide specific guidance to the department.</p>
 <ol type="1">

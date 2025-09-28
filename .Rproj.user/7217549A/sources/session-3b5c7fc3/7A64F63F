@@ -3,7 +3,7 @@
     "path": "~/Academics/MUSA/Public_Policy_Analytics/portfolio-setup-ssen-droid/Assignments/Assignment_1/assignment_1.qmd",
     "project_path": "Assignments/Assignment_1/assignment_1.qmd",
     "type": "quarto_markdown",
-    "hash": "0",
+    "hash": "1996650514",
     "contents": "",
     "dirty": false,
     "created": 1758670292300.0,
@@ -12,16 +12,16 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "259,226",
-        "scrollLine": "256",
+        "cursorPosition": "634,0",
+        "scrollLine": "599",
         "last_setup_crc32": "3b5c7fc380695c97"
     },
     "folds": "",
-    "lastKnownWriteTime": 1759101380,
+    "lastKnownWriteTime": 1759103060,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1759101382258,
+    "last_content_update": 1759103060312,
     "read_only": false,
     "read_only_alternatives": []
 }

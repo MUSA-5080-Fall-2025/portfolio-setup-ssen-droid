@@ -590,6 +590,53 @@ To mitigate these risks, the Department should adopt a layered strategy. First, 
 # Format as a professional table with kable()
 ```
 
+```{r}
+# ---- Decision framework table (minimal + robust) ----
+library(dplyr)
+library(knitr)
+
+decision_tbl <- county_reliability %>%
+  # keep rows where we can actually decide something
+  filter(!is.na(med_incomeE), !is.na(income_moe_pct)) %>%
+  # If your data already has `reliability`, we’ll use it; otherwise derive it from MOE%
+  mutate(
+    reliability = case_when(
+      !is.na(reliability) ~ reliability,
+      income_moe_pct <= 5     ~ "High Confidence",
+      income_moe_pct <= 10    ~ "Moderate Confidence",
+      TRUE                    ~ "Low Confidence"
+    ),
+    # Map reliability -> implementation recommendation
+    recommendation = case_when(
+      reliability == "High Confidence"      ~ "Safe for algorithmic decisions",
+      reliability == "Moderate Confidence"  ~ "Use with caution - monitor outcomes",
+      reliability == "Low Confidence"       ~ "Requires manual review or additional data",
+      TRUE                                  ~ "Review needed"
+    ),
+    # Pretty formatting for display only
+    `Median income ($)` = formatC(med_incomeE, format = "f", digits = 0, big.mark = ","),
+    `Income MOE %` = sprintf("%.1f%%", income_moe_pct),
+    # Order rows by reliability (High → Moderate → Low)
+    reliability = factor(reliability, levels = c("High Confidence","Moderate Confidence","Low Confidence"))
+  ) %>%
+  transmute(
+    County = county,
+    `Median income ($)`,
+    `Income MOE %`,
+    Reliability = reliability,
+    Recommendation = recommendation
+  ) %>%
+  arrange(Reliability, County)
+
+knitr::kable(
+  decision_tbl,
+  caption = "Decision Framework for Algorithm Implementation (ACS 2022 5-year)"
+)
+
+
+```
+
+
 **Key Recommendations:**
 
 **Your Task:** Use your analysis results to provide specific guidance to the department.
