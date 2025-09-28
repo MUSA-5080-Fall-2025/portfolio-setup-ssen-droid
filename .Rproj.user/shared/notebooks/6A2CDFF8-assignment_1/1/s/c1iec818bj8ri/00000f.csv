@@ -5,5 +5,7 @@
 "0",""
 "0","options(tigris_use_cache = TRUE)"
 "0","my_state <- ""New York""  "
+"0","acs_year <- 2022"
+"0",""
 "0",""
 "0",""
