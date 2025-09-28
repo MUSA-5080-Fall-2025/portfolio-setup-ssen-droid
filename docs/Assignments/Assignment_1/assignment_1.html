@@ -244,12 +244,6 @@ window.Quarto = {
   <li><a href="#specific-recommendations" id="toc-specific-recommendations" class="nav-link" data-scroll-target="#specific-recommendations">6.3 Specific Recommendations</a></li>
   <li><a href="#questions-for-further-investigation" id="toc-questions-for-further-investigation" class="nav-link" data-scroll-target="#questions-for-further-investigation">Questions for Further Investigation</a></li>
   <li><a href="#technical-notes" id="toc-technical-notes" class="nav-link" data-scroll-target="#technical-notes">Technical Notes</a></li>
-  </ul></li>
-  <li><a href="#data-sources" id="toc-data-sources" class="nav-link" data-scroll-target="#data-sources">Data Sources:</a></li>
-  <li><a href="#reproducibility" id="toc-reproducibility" class="nav-link" data-scroll-target="#reproducibility">Reproducibility:</a></li>
-  <li><a href="#methodology-notes" id="toc-methodology-notes" class="nav-link" data-scroll-target="#methodology-notes">Methodology Notes:</a></li>
-  <li><a href="#limitations" id="toc-limitations" class="nav-link" data-scroll-target="#limitations">Limitations:</a>
-  <ul class="collapse">
   <li><a href="#submission-checklist" id="toc-submission-checklist" class="nav-link" data-scroll-target="#submission-checklist">Submission Checklist</a></li>
   </ul></li>
   </ul>
@@ -1159,9 +1153,9 @@ window.Quarto = {
 <section id="demographic-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="demographic-analysis">3.3 Demographic Analysis</h2>
 <p><strong>Your Task:</strong> Analyze the demographic patterns in your selected areas.</p>
-<p>Find the tract with the highest percentage of Hispanic/Latino residents Hint: use arrange() and slice() to get the top tract</p>
-<p>Calculate average demographics by county using group_by() and summarize() Show: number of tracts, average percentage for each racial/ethnic group</p>
-<p>Create a nicely formatted table of your results using kable()</p>
+<p><strong>Find the tract with the highest percentage of Hispanic/Latino residents Hint: use arrange() and slice() to get the top tract</strong></p>
+<p><strong>Calculate average demographics by county using group_by() and summarize() Show: number of tracts, average percentage for each racial/ethnic group</strong></p>
+<p><strong>Create a nicely formatted table of your results using kable()</strong></p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 3.3A: tract with highest % Hispanic ----</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>top_hispanic_tract <span class="ot">&lt;-</span> tract_demo <span class="sc">%&gt;%</span></span>
@@ -1300,9 +1294,9 @@ window.Quarto = {
 <h2 class="anchored" data-anchor-id="moe-analysis-for-demographic-variables">4.1 MOE Analysis for Demographic Variables</h2>
 <p><strong>Your Task:</strong> Examine margins of error for demographic variables to see if some communities have less reliable data.</p>
 <p><strong>Requirements:</strong> - Calculate MOE percentages for each demographic variable - Flag tracts where any demographic variable has MOE &gt; 15% - Create summary statistics</p>
-<p>Calculate MOE percentages for white, Black, and Hispanic variables Hint: use the same formula as before (margin/estimate * 100)</p>
-<p>Create a flag for tracts with high MOE on any demographic variable Use logical operators (| for OR) in an ifelse() statement</p>
-<p>Create summary statistics showing how many tracts have data quality issues</p>
+<p><strong>Calculate MOE percentages for white, Black, and Hispanic variables Hint: use the same formula as before (margin/estimate * 100)</strong></p>
+<p><strong>Create a flag for tracts with high MOE on any demographic variable Use logical operators (| for OR) in an ifelse() statement</strong></p>
+<p><strong>Create summary statistics showing how many tracts have data quality issues</strong></p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 4.1: MOE analysis for demographic variables ----</span></span>
 <span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1369,8 +1363,8 @@ window.Quarto = {
 <section id="pattern-analysis" class="level2">
 <h2 class="anchored" data-anchor-id="pattern-analysis">4.2 Pattern Analysis</h2>
 <p><strong>Your Task:</strong> Investigate whether data quality problems are randomly distributed or concentrated in certain types of communities.</p>
-<p>Group tracts by whether they have high MOE issues Calculate average characteristics for each group: - population size, demographic percentages</p>
-<p>Use group_by() and summarize() to create this comparison Create a professional table showing the patterns</p>
+<p><strong>Group tracts by whether they have high MOE issues. Calculate average characteristics for each group:population size, demographic percentages</strong></p>
+<p><strong>Use group_by() and summarize() to create this comparison. Create a professional table showing the pattern</strong></p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="co"># ---- 4.2A: Compare tracts with vs. without high MOE issues ----</span></span>
 <span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -1556,37 +1550,29 @@ window.Quarto = {
 </section>
 <section id="technical-notes" class="level2">
 <h2 class="anchored" data-anchor-id="technical-notes">Technical Notes</h2>
-</section>
-</section>
-<section id="data-sources" class="level1">
-<h1>Data Sources:</h1>
+<p><strong>Data Sources</strong>:</p>
 <p>U.S. Census Bureau, American Community Survey (ACS) 2018–2022 5-Year Estimates</p>
 <p>Data retrieved using the tidycensus R package on 4.5.1</p>
-</section>
-<section id="reproducibility" class="level1">
-<h1>Reproducibility:</h1>
+<p><strong>Reproducibility</strong></p>
 <p>All analysis conducted in R version [insert version, e.g., 4.3.2]</p>
 <p>Required packages: tidycensus, tidyverse, knitr, stringr</p>
 <p>A valid Census API key is required; results can be replicated by loading the same variables and geographies for ACS 5-year 2022</p>
 <p>Complete code and documentation are available at: [your portfolio URL]</p>
-</section>
-<section id="methodology-notes" class="level1">
-<h1>Methodology Notes:</h1>
+<p><strong>Methodology Notes</strong></p>
 <p>County-level income and population estimates were retrieved in “wide” format to simplify margin of error calculations.</p>
 <p>Reliability categories were created using thresholds (&lt;5% = High, 5–10% = Moderate, &gt;10% = Low).</p>
 <p>Counties were selected for tract-level analysis to represent different reliability levels (Kings = high, Greene = moderate, Hamilton = low).</p>
 <p>Tract-level race/ethnicity percentages were calculated by dividing group counts by total population, then multiplying by 100.</p>
 <p>County labels for tracts were assigned using official FIPS codes rather than string parsing to avoid NA parsing issues.</p>
 <p>High MOE flags were set at 15% for subgroup demographics, following common practice in ACS data quality analysis.</p>
-</section>
-<section id="limitations" class="level1">
-<h1>Limitations:</h1>
+<p><strong>Limitations</strong></p>
 <p>ACS estimates are based on sample surveys and are subject to sampling error; margins of error can be especially large for small populations and detailed subgroups.</p>
 <p>Tract-level data for race/ethnicity is particularly volatile; nearly all tracts in Kings County showed MOE% &gt; 15%.</p>
 <p>Rural counties (e.g., Hamilton) have very small populations, making subgroup estimates unreliable or unavailable.</p>
 <p>Temporal limitations: results are based on the 2018–2022 5-year ACS and may not reflect more recent economic or demographic shifts.</p>
 <p>Geographic limitations: analysis focused on New York; findings may not generalize to other states without adjustment for local context.</p>
 <hr>
+</section>
 <section id="submission-checklist" class="level2">
 <h2 class="anchored" data-anchor-id="submission-checklist">Submission Checklist</h2>
 <p>Before submitting your portfolio link on Canvas:</p>
