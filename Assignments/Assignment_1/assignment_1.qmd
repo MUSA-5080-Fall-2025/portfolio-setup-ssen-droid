@@ -700,5 +700,3 @@ Before submitting your portfolio link on Canvas:
 - [ ] Document renders correctly to HTML
 
 **Remember:** Submit your portfolio URL on Canvas, not the file itself. Your assignment should be accessible at `your-portfolio-url/assignments/assignment_1/your_file_name.html`
-
-
