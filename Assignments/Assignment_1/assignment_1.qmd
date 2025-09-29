@@ -578,18 +578,6 @@ To mitigate these risks, the Department should adopt a layered strategy. First, 
 
 **Your Task:** Create a decision framework for algorithm implementation.
 
-```{r recommendations-data}
-# Create a summary table using your county reliability data
-# Include: county name, median income, MOE percentage, reliability category
-
-# Add a new column with algorithm recommendations using case_when():
-# - High Confidence: "Safe for algorithmic decisions"
-# - Moderate Confidence: "Use with caution - monitor outcomes"  
-# - Low Confidence: "Requires manual review or additional data"
-
-# Format as a professional table with kable()
-```
-
 ```{r}
 # ---- Decision framework table (minimal + robust) ----
 library(dplyr)
@@ -633,8 +621,6 @@ knitr::kable(
   caption = "Decision Framework for Algorithm Implementation (ACS 2022 5-year)"
 )
 ```
-
-
 **Key Recommendations:**
 
 **Your Task:** Use your analysis results to provide specific guidance to the department.
