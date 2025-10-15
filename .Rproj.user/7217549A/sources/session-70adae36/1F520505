@@ -12,8 +12,13 @@
     "properties": {
         "source_window_id": "",
         "Source": "Source",
+<<<<<<< HEAD:.Rproj.user/7217549A/sources/session-5c5d75a2/1F520505
         "cursorPosition": "18,10",
         "scrollLine": "0"
+=======
+        "cursorPosition": "28,30",
+        "scrollLine": "20"
+>>>>>>> parent of 38f58b0 (r):.Rproj.user/7217549A/sources/session-69b67dd4/1F520505
     },
     "folds": "",
     "lastKnownWriteTime": 1760353703,
