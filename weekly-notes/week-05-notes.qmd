@@ -1,0 +1,68 @@
+---
+title: "Week-5-notes"
+date: 2025-9-15
+---
+ **Linear Regression** 
+ - Parametric Methods (just a few parameters - linear)
+      - Deep learning is actually parametric. just has lots of parameters for every variable 
+ - Non parametric (will try and fund best form to find it ... not necessarily linear)
+ 
+ **Building a model** 
+ - lm(median_incomeE ~ total_popE, data = padata)
+ - 
+ 
+ **Statistical Significance**
+ - different samples will produce different lines. If you took lots of samples you'd get different regression lines. Goal is to figure out how representative your line is 
+ - Slope = .02 
+ - could we get .02 if the H0 (null hypthesis - no relationship) were true? 
+      - we can answer this in 2 ways
+      - t-statistic: how many standard errors away from 0 slope are you. You're seeing how many SEs you're away from a 0 relationship       slope...bigger T is better (looking for numbers greater than 2)
+      - p value: probability of seeing our estimate if H0 is true 
+      
+**How good is model**
+  -Inference: look at R^2 (how much of variance is explained by model)
+  -Prediction: R^2 is not enough. How well would it predict new data. 
+  
+**Problems in Regression for prediction**
+1) Underfitting - ignores relationshp 
+2) Good fit - captures true pattern, but still error 
+3) overfitting - non-paramteric ... will not apply well to next sample 
+
+**Train/Test Split** 
+1) Training set - run the regression on the training data set (generally 70%) 
+2) Test set - see how well your model works on the testing set (generally 30%)
+
+**Evaluate Predictions**
+- RSME -> (Estimate - True value)^2 ... if RMSE is $9,500 then it means our predictions are off by ~$9,500 on average ... penalizes bigger values 
+- MAE --> estimate - true value 
+
+**Cross-Validation**
+- Multiple Train/Test splits 
+- K-fold validation (k number of folds)
+    - EG) 10-fold validation. You break up into 10 groups. 9 are train, and then test on 1. Do this 10 times, where every "fold" is tested 
+    
+**Checking Assumptions**
+- Linear regression assumptions:
+    - 1. Relationship is Linear. 
+    - How to check: Residual Plot (want randomness)
+    
+    - 2. Constant variance 
+    - How to check: residual plot (SEs should be normal)
+    - how to fix: may be missing variables if you are seeing non-normal residuals 
+    - Formal Test: Breusch-Pagan --> you want high p-value
+    
+    - 3. No multicollinearity 
+    - How to check: Variance inflation factor ... vif(model). 
+        - VIF shouldn't be higher than 10 
+    
+    - 4. No Influential Outliers 
+        - What to do: remove if high leverage AND large residuals (cook's distance)
+        - Also: create features instead of 
+    -
+    
+if violated:   
+    - coefficients may be biased 
+    - Standard errors are wrong 
+    - predictions unrealiable 
+
+
