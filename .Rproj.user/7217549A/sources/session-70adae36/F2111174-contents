@@ -1,6 +1,0 @@
-install.packages("tidyverse")
-install.packages("tidycensus")
-install.packages("knitr")
-quarto::quarto_render()
-quarto preview
-quarto::quarto_preview()
