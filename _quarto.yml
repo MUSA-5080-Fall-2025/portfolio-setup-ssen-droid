@@ -11,15 +11,28 @@ website:
 
       - text: Labs
         menu:
-          - href: Labs/Lab 0/Scripts/lab0_template.html
+          - href: Labs/Lab 0/Scripts/lab0_template.qmd
             text: Lab 0
             
       - text: Assignments 
         menu:
-          - href: Assignments/Assignment_1/assignment_1.html
+          - href: Assignments/Assignment_1/assignment_1.qmd
             text: Assignment 1
-          - href: Assignments/Assignment_2/Sen_Sam_Assignment2.html
+          - href: Assignments/Assignment_2/Sen_Sam_Assignment2.qmd
             text: Assignment 2
+      
+      - text: Weekly Notes 
+        menu:
+          - href: weekly-notes/week-01-notes.qmd
+            text: Week 1
+          - href: weekly-notes/week-02-notes.qmd
+            text: Week 2
+          - href: weekly-notes/week-03-notes.qmd
+            text: Week 3
+          - href: weekly-notes/week-04-notes.qmd
+            text: Week 4
+
+
 
 format:
   html:
