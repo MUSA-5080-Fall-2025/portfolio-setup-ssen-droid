@@ -1,0 +1,3 @@
+"0","# Spatial join to match vulnerable tracts to their counties"
+"0","vulnerable_tracts_with_county <- vulnerable_tracts_projected %>%"
+"0","  st_join(pa_counties_projected, join = st_within)"
