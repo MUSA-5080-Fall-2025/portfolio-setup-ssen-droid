@@ -1,6 +1,6 @@
 ---
-title: "Week-5-notes"
-date: 2025-9-15
+title: "Week 5 Notes"
+date: "2025-09-15"
 ---
  **Linear Regression** 
  - Parametric Methods (just a few parameters - linear)

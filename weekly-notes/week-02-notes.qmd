@@ -1,6 +1,6 @@
 ---
-title: "Week-2-notes"
-date: 2025-9-15
+title: "Week 2 Notes"
+date: "2025-09-15"
 ---
 
 [**Algorithmic Decision Making & Census Data**]{.underline}

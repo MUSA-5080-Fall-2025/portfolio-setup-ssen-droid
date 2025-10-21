@@ -29,6 +29,9 @@ website:
             text: Week 2
           - href: weekly-notes/week-04-notes.qmd
             text: Week 4
+          - href: weekly-notes/week-05-notes.qmd
+            text: Week 5
+
 
 format:
   html:
