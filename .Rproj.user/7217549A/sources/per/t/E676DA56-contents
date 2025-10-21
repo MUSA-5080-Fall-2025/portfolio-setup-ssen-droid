@@ -15,6 +15,13 @@ execute:
   message: false
 ---
 
+```{r}
+# Add this near the top of your .qmd after loading libraries
+options(tigris_use_cache = TRUE)
+options(tigris_progress = FALSE)  # Suppress tigris progress bars
+```
+
+
 ## Assignment Overview
 
 **Learning Objectives:**
