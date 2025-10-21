@@ -11,14 +11,14 @@ website:
 
       - text: Labs
         menu:
-          - href: Labs/Lab 0/Scripts/lab0_template.qmd
+          - href: Labs/Lab 0/Scripts/lab0_template.html
             text: Lab 0
             
       - text: Assignments 
         menu:
-          - href: Assignments/Assignment_1/assignment_1.qmd
+          - href: Assignments/Assignment_1/assignment_1.html
             text: Assignment 1
-          - href: Assignments/Assignment_2/Sen_Sam_Assignment2.qmd
+          - href: Assignments/Assignment_2/Sen_Sam_Assignment2.html
             text: Assignment 2
 
 format:
