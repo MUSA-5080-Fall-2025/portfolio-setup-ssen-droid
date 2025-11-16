@@ -1,0 +1,622 @@
+# Lab Assignment 4: Spatial Predictive Analysis
+**MUSA 5080 - Fall 2025**
+**Sam Sen** 
+
+---
+
+## Introduction 
+This report will explore Rodent Baiting requests in the Chicago area. I have selected this set to see if there are spatial patterns associated with rodent baiting requests, and understand where requests occur most often. This information could be used to help allocate city resources. It is also important to note that just because a specific area has many requests doesn't necessarily mean that that area suffers more from rodent infestations. This is much like the predicament of predictive policing. It is very possible that wealthier neighborhoods file more complaints while poorer neighborhoods fail to report rodent sightings. This report will not explore additional demographic datasets in order to address these questions, but it is important to keep in mind as this report is analyzed. 
+
+## Violation Selection: Rodent Baiting
+
+```{r}
+library(tidyverse)
+library(janitor)
+
+rodent <- readr::read_csv("Data/Rodent.csv") %>%
+  janitor::clean_names()
+
+glimpse(rodent)
+nrow(rodent)
+
+
+
+
+```
+### Explanation 
+The violation selection code narrows the massive 311 dataset down to one type of service request and one year of observations.That subset becomes the input for all later steps (fishnet aggregation, modeling, cross-validation, KDE baseline).
+
+
+## Data Loading & Exploration
+
+```{r}
+# Parse the text dates, then keep only 2017 rows with valid coordinates
+rodent_2017 <- rodent %>%
+  mutate(creation_date = lubridate::mdy(creation_date)) %>%  # "12/18/2018" -> Date
+  filter(lubridate::year(creation_date) == 2017,              # only 2017
+         !is.na(latitude), !is.na(longitude))                 # drop missing coords
+
+# quick checks
+nrow(rodent_2017)
+summary(rodent_2017$creation_date)
+
+```
+```{r}
+library(sf)
+
+# Convert to an sf (spatial) object
+rodent_sf <- st_as_sf(
+  rodent_2017,
+  coords = c("longitude", "latitude"),
+  crs = 4326  # WGS84 coordinate system (standard lat/long)
+)
+
+# Check structure
+rodent_sf
+
+```
+
+```{r}
+# needs: library(ggplot2); library(sf)
+# assumes you already have rodent_sf (2017 points as sf in EPSG:4326)
+
+ggplot() +
+  geom_sf(data = rodent_sf, color = "firebrick", alpha = 0.15, size = 0.20) +
+  labs(
+    title = "Rodent Baiting Requests (2017) — Points",
+    subtitle = "Each point = one 311 request",
+    caption = "Source: City of Chicago 311"
+  ) +
+  theme_void()
+
+
+
+```
+```{r}
+set.seed(1)
+rodent_sample <- dplyr::slice_sample(rodent_sf, n = 10000)
+
+ggplot() +
+  geom_sf(data = rodent_sample, color = "firebrick", alpha = 0.25, size = 0.25) +
+  labs(title = "Rodent Baiting (2017) — Sample of 10k points") +
+  theme_void()
+
+```
+### Obersvations 
+There are an alarming number of rodent baiting requests throughout the city of Chicago, with the north side of Chicago in particular looking very dense. However, without a density map, it is hard to differentiate between the dark clusters of red. The south side of Chicago clearly has more sparse data with regard to rodent baiting requests. The following section will employ fishnet grid creation to better understand the spatial data. 
+
+## Fishnet Grid Creation
+
+```{r}
+library(sf)
+library(dplyr)
+library(tigris)
+library(ggplot2)
+library(viridis)
+options(tigris_use_cache = TRUE, tigris_class = "sf")
+
+# Chicago boundary (robust filter), then keep only the main polygon; project to meters
+il_places <- places(state = "IL", cb = TRUE, year = 2020)
+chi_city <- il_places %>%
+  filter(NAME == "Chicago" | NAME == "Chicago city" | grepl("^Chicago", NAMELSAD)) %>%
+  st_make_valid() %>%
+  st_cast("POLYGON") %>%
+  mutate(area = st_area(.)) %>%
+  slice_max(area, n = 1) %>%
+  st_transform(3857)
+
+
+
+```
+```{r}
+# Regular 500 m grid covering Chicago’s extent
+grid_raw <- st_make_grid(chi_city, cellsize = 500, square = TRUE) %>%
+  st_as_sf() %>%
+  mutate(grid_id = dplyr::row_number())
+
+# Keep only cells whose centroids fall inside the city (drop outside)
+grid_500 <- grid_raw[ st_within(st_centroid(grid_raw), chi_city, sparse = FALSE)[,1], ]
+
+```
+```{r}
+# Ensure points are in meters to match the grid/boundary
+rodent_3857 <- st_transform(rodent_sf, 3857)
+
+# Count points per cell (fast: use st_intersects + lengths)
+grid_agg <- grid_500 %>%
+  mutate(count = lengths(st_intersects(., rodent_3857)))
+
+```
+
+```{r}
+bb <- st_bbox(chi_city)
+
+# Map of counts per 500 m cell (sqrt stretch makes mid-range visible)
+ggplot() +
+  geom_sf(data = grid_agg, aes(fill = count), color = NA) +
+  geom_sf(data = chi_city, fill = NA, color = "grey35", linewidth = 0.4, inherit.aes = FALSE) +
+  coord_sf(crs = 3857,
+           xlim = c(bb["xmin"], bb["xmax"]),
+           ylim = c(bb["ymin"], bb["ymax"]),
+           expand = FALSE) +
+  scale_fill_viridis_c(trans = "sqrt", name = "Requests / cell") +
+  labs(title = "Rodent Baiting (2017) — Counts per 500 m Cell",
+       subtitle = "Fishnet aggregation across Chicago",
+       caption = "Source: City of Chicago 311; Boundary: US Census TIGER/Line") +
+  theme_void() +
+  theme(legend.position = "right")
+
+# Quick histogram of cell counts (skews right; many zeros, few hotspots)
+ggplot(st_drop_geometry(grid_agg), aes(x = count)) +
+  geom_histogram(binwidth = 1, boundary = 0) +
+  scale_y_continuous(labels = scales::comma) +
+  labs(title = "Distribution of Requests per 500 m Cell",
+       x = "Requests in cell", y = "Number of cells") +
+  theme_minimal()
+
+```
+
+### Obersvations
+The above fisnhnet aggregation helps smooth over the rodent baiting point map in the previous section by displaying # of requests per grid cell. In essence, we have created a fishnet grid where every 500 square meters is a grid cell. From here, we can look at counts per grid cells rather than just thousands of points which is hard to interpret. This visualization makes it easier to evaluate counts accross space and provides a better sense of density of requests. The above map clearly shows high counts particular clustered in the north side of Chicago. 
+
+
+## Spatial Features
+In this section we will create a k-nearest neighbors feature and look at average counts of each grid cells 5 nearest neighbors. We will equally weight the neighbors counts and compute the average. We will then conduct Local Moran's I analysis in the subsequent section and add our second feature - a distance measure - that will be further explained in that section.   
+
+```{r}
+library(sf)
+library(dplyr)
+library(spdep)
+
+```
+
+```{r}
+grid_agg_3857 <- st_transform(grid_agg, 3857)
+
+```
+
+```{r}
+centroids <- st_centroid(grid_agg_3857)
+xy <- st_coordinates(centroids)
+knn5 <- knearneigh(xy, k = 5)
+nb5  <- knn2nb(knn5)
+lw5  <- nb2listw(nb5, style = "W", zero.policy = TRUE)
+
+
+```
+
+```{r}
+# Convert neighbor list into a weights matrix
+weights_5 <- spdep::nb2listw(nb5, style = "W")
+
+# Calculate spatial lag (mean count of 5 nearest neighbors)
+grid_agg_3857$lag5_mean <- spdep::lag.listw(weights_5, grid_agg_3857$count)
+
+```
+
+```{r}
+library(ggplot2)
+library(viridis)
+
+ggplot(grid_agg_3857) +
+  geom_sf(aes(fill = lag5_mean), color = NA) +
+  scale_fill_viridis_c(name = "Avg Neighbor Count", trans = "sqrt") +
+  labs(
+    title = "Rodent Baiting — Mean Count of 5 Nearest Neighbor Cells",
+    subtitle = "Spatial lag feature (k = 5)",
+    caption = "Source: City of Chicago 311"
+  ) +
+  theme_void()
+
+```
+### Explanation 
+The above map displays our first feature - k-NN. Each grid cell is displaying the mean of its 5 nearest neighbored weighted equally. Visually, there appears to be spatial autocorrelation, with high counts surrounded by high counts and low counts surrounded by low counts. However, statistical significance of this apparent autocorrelation cannot be determined without computing Moran's I. The next step with look at Local Moran's I to evaluate the signifiance of this observed spatial autocorrelation. 
+
+## Local Moran's I 
+```{r}
+# --- Local Moran’s I: Hot/Cold Spot Analysis ---
+library(spdep)
+library(dplyr)
+library(ggplot2)
+
+#Compute Local Moran’s I for the counts
+locI <- localmoran(grid_agg_3857$count, lw5, zero.policy = TRUE)
+
+#Attach results
+grid_agg_3857 <- grid_agg_3857 %>%
+  mutate(
+    Ii = locI[, 1],          # Local Moran’s I value
+    Ei = locI[, 2],          # Expected value
+    Vi = locI[, 3],          # Variance
+    Z  = (Ii - Ei) / sqrt(Vi), # Z-score
+    Pr = locI[, 5]           # p-value
+  )
+
+#Classify each cell (significant clusters/outliers)
+z_count <- as.numeric(scale(grid_agg_3857$count))
+z_lag   <- as.numeric(scale(grid_agg_3857$lag5_mean))
+sig     <- grid_agg_3857$Pr < 0.05
+
+grid_agg_3857$quad <- dplyr::case_when(
+  z_count >= 0 & z_lag >= 0 & sig ~ "High-High (Hot Spot)",
+  z_count <  0 & z_lag <  0 & sig ~ "Low-Low (Cold Spot)",
+  z_count >= 0 & z_lag <  0 & sig ~ "High-Low (Outlier)",
+  z_count <  0 & z_lag >= 0 & sig ~ "Low-High (Outlier)",
+  TRUE ~ "Not Significant"
+)
+
+#Plot hot/cold spots
+ggplot(grid_agg_3857) +
+  geom_sf(aes(fill = quad), color = NA) +
+  scale_fill_manual(
+    values = c(
+      "High-High (Hot Spot)"  = "#b2182b",
+      "Low-Low (Cold Spot)"   = "#2166ac",
+      "High-Low (Outlier)"    = "#ef8a62",
+      "Low-High (Outlier)"    = "#67a9cf",
+      "Not Significant"       = "grey90"
+    ),
+    name = "Local Moran’s I"
+  ) +
+  labs(
+    title    = "Local Moran’s I — Rodent Baiting Requests (2017)",
+    subtitle = "Significant clusters (p < 0.05) using k = 5 nearest neighbors",
+    caption  = "Source: City of Chicago 311"
+  ) +
+  theme_void() +
+  theme(legend.position = "right")
+
+```
+### Explanation
+In general, the clustering of high-high values in the north side of Chicago is significant (hot spots). The Low-low clustering that we observed in the previous map is not spatially significant per Local Moran's I. This could be due to 0s and lack of observations. The north and southwest parts of the city sow clusters of high rodent complaints. These may correspond to dense residential neighborhoods. The central and outer areas show few significant clusters, possibly due to lower population density or lack of reporting due to other factors including demographic. 
+
+## Additional Spatial Feature (Distance Measures)
+Here we will add feature and visualization that shows each grid cells distance to the nearest hotspot. 
+
+```{r}
+library(sf)
+library(dplyr)
+
+# 1️⃣ Separate the hot spot cells
+hotspots <- grid_agg_3857 %>% 
+  filter(quad == "High-High (Hot Spot)")
+
+# 2️⃣ Calculate distance from every cell centroid to nearest hot spot centroid
+centroids <- st_centroid(grid_agg_3857)
+hot_centroids <- st_centroid(hotspots)
+
+# st_distance creates a distance matrix (each cell vs each hot spot)
+dist_matrix <- st_distance(centroids, hot_centroids)
+
+# 3️⃣ Take the minimum distance per cell (convert from meters to km)
+grid_agg_3857$dist_to_hotspot_km <- apply(dist_matrix, 1, min) / 1000
+
+```
+
+```{r}
+library(ggplot2)
+library(viridis)
+
+ggplot(grid_agg_3857) +
+  geom_sf(aes(fill = dist_to_hotspot_km), color = NA) +
+  scale_fill_viridis_c(name = "Distance to nearest hot spot (km)", trans = "sqrt") +
+  labs(
+    title = "Distance to Nearest Hot Spot — Rodent Baiting (2017)",
+    subtitle = "Each 500 m cell colored by distance from significant hot spots",
+    caption = "Source: City of Chicago 311; Hot spots from Local Moran’s I"
+  ) +
+  theme_void() +
+  theme(legend.position = "right")
+
+```
+### Explanation 
+The above gradient map shows grid cells that are far from hot spots in light yellow and grid cells that are closer to hotspots in blue. As expected, the south side of Chicago is largely yellow due to the low number of rodent baiting requests, while the north side of Chicago displays dark blue. This can be simply interpreted by saying the south side of Chicago tends to have grid cells that are far away from hotspots and as one moves north their distance to the nearest hotspot decreases. 
+
+## Count Regression Models
+
+In this section we will first fit a Poisson Regression and then a negative binomial regression. We have created two predictors from the previous sections - k-NN and our distance measure - and our dependent variable is the number of rodent baiting reqests in a given grid cell. Since the dependent variable is a count (# of baiting requests) we cannot use simple regresison. 
+
+### Poisson Regression 
+```{r}
+# Predictors we created in Part 3:
+# - lag5_mean (avg of 5 nearest neighbors)
+# - dist_to_hotspot_km (distance to nearest hot spot)
+
+stopifnot(all(c("count","lag5_mean","dist_to_hotspot_km") %in% names(grid_agg_3857)))
+
+# (optional but helpful) replace any tiny NAs with 0s for modeling
+grid_mod <- grid_agg_3857 |>
+  dplyr::mutate(
+    lag5_mean = ifelse(is.na(lag5_mean), 0, lag5_mean),
+    dist_to_hotspot_km = ifelse(is.na(dist_to_hotspot_km), 0, dist_to_hotspot_km)
+  )
+
+```
+
+```{r}
+# Poisson regression with log link (default)
+m_pois <- glm(
+  count ~ lag5_mean + dist_to_hotspot_km,
+  data = grid_mod,
+  family = poisson(link = "log")
+)
+
+summary(m_pois)
+
+```
+```{r}
+exp(coef(m_pois))
+
+
+```
+
+### Negative Binomial Regression 
+```{r}
+# install.packages("MASS")  # if not installed
+library(MASS)
+library(broom)
+
+m_nb <- glm.nb(count ~ lag5_mean + dist_to_hotspot_km, data = grid_mod)
+summary(m_nb)
+
+```
+
+```{r}
+AIC(m_pois, m_nb)
+
+```
+
+### Explanation 
+The Poisson regression assumes that mean=variance, which is likley unrealistic given that many cells have 0 counts while some cells have extremely high counts. Negative Binomial regression relaxes this assumption by adding a parameter that allows variance to exceed mean. In comparing AICs of both models, the Negative Binomial model appears to be a better fit which is expected given the highy variance in the data.  
+
+## Spatial Cross-Validation (2017)
+
+```{r}
+#Part 5 — Step 1: assign each grid cell to a spatial group (Census tract)
+
+library(sf)
+library(dplyr)
+library(tigris)
+options(tigris_use_cache = TRUE, tigris_class = "sf")
+
+#Load Cook County tracts and keep just the tract ID
+cook_tracts <- tigris::tracts(state = "IL", county = "Cook", cb = TRUE, year = 2017) %>%
+  st_transform(3857) %>%
+  dplyr::select(GEOID)  # explicitly use dplyr::select()
+
+#Get centroids for grid (points for joining)
+grid_cent <- st_centroid(grid_agg_3857)
+
+#Spatial join: assign each centroid to its containing tract polygon
+grid_with_group <- st_join(grid_cent, cook_tracts, left = TRUE)
+
+#Copy GEOID (the tract ID) into grid object as group_id
+grid_agg_3857$group_id <- grid_with_group$GEOID
+
+#Sanity checks
+cat("Unique tracts assigned:", length(unique(na.omit(grid_agg_3857$group_id))), "\n")
+cat("Unassigned cells:", sum(is.na(grid_agg_3857$group_id)), "\n")
+
+
+```
+
+```{r}
+# Part 5 — Step 2: define function for one iteration of LOGO CV
+
+library(MASS)     # for glm.nb
+library(Metrics)  # for mae() and rmse()
+
+run_logo <- function(test_group, data) {
+  # Split data into training and testing based on group_id
+  train_data <- data[data$group_id != test_group, ]
+  test_data  <- data[data$group_id == test_group, ]
+  
+  # Fit Negative Binomial model 
+  model <- glm.nb(count ~ lag5_mean + dist_to_hotspot_km, data = train_data)
+  
+  # Predict for held-out group
+  preds <- predict(model, newdata = test_data, type = "response")
+  
+  # Calculate error metrics for that group
+  data.frame(
+    group_id = test_group,
+    MAE  = mae(test_data$count, preds),
+    RMSE = rmse(test_data$count, preds)
+  )
+}
+```
+
+```{r}
+# Part 5 — Step 3: choose valid test groups (tracts with enough cells)
+
+library(dplyr)
+
+# cells per tract
+group_summary <- grid_agg_3857 |>
+  st_drop_geometry() |>
+  filter(!is.na(group_id)) |>
+  count(group_id, name = "n_cells")
+
+# distribution of tract sizes (sanity check)
+size_dist <- group_summary |>
+  count(n_cells, name = "num_tracts") |>
+  arrange(n_cells)
+print(size_dist)
+
+# pick tracts with >= 5 cells as testable groups
+valid_groups <- group_summary |>
+  filter(n_cells >= 5) |>
+  pull(group_id)
+
+# dataset restricted to those groups for testing (training will still see ALL groups in each fold)
+grid_valid <- grid_agg_3857 |>
+  filter(group_id %in% valid_groups)
+
+# quick coverage stats
+cat("Total tracts:", nrow(group_summary), "\n")
+cat("Valid test tracts (>=5 cells):", length(valid_groups), "\n")
+cat("Cells in valid test tracts:", nrow(grid_valid), "of", nrow(grid_agg_3857), "\n")
+cat("Coverage of cells for testing:", round(100 * nrow(grid_valid)/nrow(grid_agg_3857), 1), "%\n")
+
+```
+
+```{r}
+# Part 5 — Step 4: quick sanity run on 10 valid tracts
+test_groups <- valid_groups[1:10]
+
+cv_results_small <- do.call(
+  rbind,
+  lapply(test_groups, run_logo, data = grid_valid)
+)
+
+# View first few results and overall averages
+head(cv_results_small)
+mean(cv_results_small$MAE, na.rm = TRUE)
+mean(cv_results_small$RMSE, na.rm = TRUE)
+
+```
+```{r}
+# Part 5 — Step 5: full Leave-One-Group-Out CV over all valid tracts
+cv_results <- do.call(
+  rbind,
+  lapply(valid_groups, run_logo, data = grid_valid)
+)
+
+# Save + summarize
+head(cv_results)
+mean(cv_results$MAE, na.rm = TRUE)
+mean(cv_results$RMSE, na.rm = TRUE)
+
+
+```
+
+```{r}
+# Part 5 — Optional diagnostic: visualize CV errors by tract
+
+library(dplyr)
+library(ggplot2)
+library(viridis)
+
+#Summarize mean MAE per tract (from cv_results)
+cv_summary <- cv_results |>
+  group_by(group_id) |>
+  summarise(MAE = mean(MAE, na.rm = TRUE),
+            RMSE = mean(RMSE, na.rm = TRUE))
+
+#️Join CV errors back to the tract geometry
+tracts_errors <- cook_tracts |>
+  left_join(cv_summary, by = c("GEOID" = "group_id"))
+
+#Plot MAE across tracts
+ggplot(tracts_errors) +
+  geom_sf(aes(fill = MAE), color = NA) +
+  scale_fill_viridis_c(option = "C", name = "Mean Absolute Error") +
+  labs(
+    title = "Cross-Validated MAE by Census Tract",
+    subtitle = "Leave-One-Group-Out CV (Negative Binomial Model)",
+    caption  = "Source: City of Chicago 311 Rodent Baiting Data, 2017"
+  ) +
+  theme_void() +
+  theme(legend.position = "right")
+
+```
+### Explanation
+To evaluate predictive performance, the above analysis implemented a Leave-One-Group-Out Cross-Validation (LOGO-CV) using Census tracts as spatial folds. Each iteration trained the Negative Binomial model on all tracts except one and predicted the held-out tract, producing tract-level Mean Absolute Error (MAE) and Root Mean Squared Error (RMSE) values. On average, the model achieved MAE ≈ 15 and RMSE ≈ 19, indicating that predictions typically differed from observed counts by about 15 rodent requests per 500 m cell. The MAE map shows that most tracts have relatively low error (dark purple), while a few in the north and west sides exhibit higher MAE (yellow), suggesting localized variation in reporting patterns or unmodeled neighborhood effects. These are the areas where there were significant clusters of hotspots where some hotspots had extreme values. 
+
+## Model Evaluation
+The following section well compare our LOGO-CV to KDE baseline. KDE is a simple heatmap of rodent activity that spreads all the point data into a smooth "bump" of intensity over the city. When all these bumps overlap we get a continuous density surface. 
+
+```{r}
+# --- Part 6: KDE baseline ---
+# Step 1: Setup (packages, points, boundary, window, ppp)
+
+# 1) Load required packages
+# install.packages("spatstat")  # run once if not yet installed
+library(spatstat)   # brings in spatstat.geom/core/etc.
+library(sf)
+library(dplyr)
+
+# 2) Use your existing 2017 rodent points
+rodent_sf_2017 <- rodent_sf
+
+# 3) Make sure the points are projected to meters (EPSG:3857)
+rodent_pts_3857 <- if (sf::st_is_longlat(rodent_sf_2017)) {
+  sf::st_transform(rodent_sf_2017, 3857)
+} else {
+  rodent_sf_2017
+}
+
+# 4) Create a boundary polygon from your grid
+boundary_sfc <- sf::st_union(sf::st_geometry(grid_agg_3857))   # returns sfc_MULTIPOLYGON
+boundary_sfc <- sf::st_make_valid(boundary_sfc)
+
+# 5) Convert boundary to a spatstat window
+win_3857 <- spatstat.geom::as.owin(boundary_sfc)
+
+# 6) Convert the rodent points into a spatstat ppp (point pattern)
+coords <- sf::st_coordinates(rodent_pts_3857)
+pp <- spatstat.geom::ppp(x = coords[,1], y = coords[,2], window = win_3857)
+
+# 7) Sanity check outputs
+cat("Point pattern:", pp$n, "events in window\n")
+cat("Window area (sq. km):", round(spatstat.geom::area.owin(win_3857) / 1e6, 1), "\n")
+
+
+```
+```{r}
+# --- Part 6: KDE baseline ---
+# Step 2: choose bandwidth, compute KDE, extract to grid, score
+
+library(spatstat)
+library(sf)
+library(dplyr)
+library(Metrics)  # for mae(), rmse()
+
+# pp  = your point pattern (from prior step)
+# grid_agg_3857 = your fishnet with 'count' column (observed)
+
+# 1) Automatic bandwidth selection (Diggle’s method is a good default)
+bw <- bw.diggle(pp)   # you can also try: bw.ppl(pp) or bw.scott(pp)
+cat("Chosen bandwidth (meters):", round(bw, 1), "\n")
+
+# 2) KDE intensity image (events per square meter)
+#    edge=TRUE applies edge correction; leaveat defaults to pixel grid
+dens_im <- density.ppp(pp, sigma = bw, edge = TRUE)
+
+# 3) Get grid centroids (to sample the KDE at each cell)
+grid_cent <- st_centroid(grid_agg_3857)
+xy <- st_coordinates(grid_cent)
+
+# 4) Extract KDE intensity at each centroid using nearest pixel lookup
+np   <- spatstat.geom::nearest.pixel(xy[,1], xy[,2], dens_im)
+kde_intensity <- dens_im$v[cbind(np$row, np$col)]   # units: events per m^2
+
+# 5) Convert intensity (events/m^2) to expected count per grid cell
+#    Cell area in m^2 (assumes square fishnet in EPSG:3857)
+cell_area_m2 <- mean(as.numeric(st_area(grid_agg_3857)))
+kde_pred_count <- pmax(0, kde_intensity * cell_area_m2)  # nonnegative
+
+# 6) Score the KDE baseline against observed counts
+obs <- grid_agg_3857$count
+kde_mae  <- mae(obs, kde_pred_count)
+kde_rmse <- rmse(obs, kde_pred_count)
+
+cat("KDE baseline — MAE:", round(kde_mae, 2), "\n")
+cat("KDE baseline — RMSE:", round(kde_rmse, 2), "\n")
+
+# (Optional) Attach to grid for mapping later
+grid_agg_3857$kde_pred <- kde_pred_count
+
+```
+### Explanation 
+To benchmark model performance, I compared the Negative Binomial regression against a Kernel Density Estimation (KDE) baseline derived from 2017 rodent-baiting points. The KDE, which smooths event locations into a continuous density surface, achieved MAE ≈ 5 and RMSE ≈ 9 when evaluated on the same data. Although this in-sample baseline yields lower errors, it lacks predictive generalization. By contrast, the cross-validated Negative Binomial model (MAE ≈ 15, RMSE ≈ 19) provides a realistic measure of out-of-sample performance and captures interpretable spatial relationships that a KDE heatmap cannot. However, in order to draw this conclusion of model efficacy, the model must be tested on a new dataset such as 2018. 
+
+## Conclusion: Discussion/Analysis 
+
+This report used 2017 Chicago 311 Rodent Baiting requests to model the spatial distribution of rodent activity using a 500 m grid. A Negative Binomial regression incorporating local spatial context (average neighbor count and distance to hot spots) effectively captured the city’s underlying spatial structure of rodent complaints. Cross-validation with Census tracts as spatial folds produced an average MAE of about 15 and RMSE of 19, indicating that model predictions typically deviated from observed counts by roughly 15 complaints per cell. The spatial distribution of errors suggested that predictive accuracy was generally consistent across most neighborhoods, with somewhat higher errors concentrated in parts of the southwest and north sides. This warrants further exploratory analysis and investigation. 
+
+To benchmark performance, the model was compared to a Kernel Density Estimation (KDE) baseline that smoothed event locations into a continuous density surface. Although the KDE baseline achieved lower in-sample error (MAE ≈ 5, RMSE ≈ 9) due to its direct use of observed event data, it lacks the ability to generalize beyond the study year or explain spatial variation through interpretable predictors. In contrast, the regression framework offers a robust, extensible foundation for spatial prediction—capable of assessing new areas or future periods—while providing insight into how neighborhood context influences rodent activity across Chicago. Temporal validation on 2018 data should be conducted as a next step to draw this conclusion. 
+
+---
+
+
