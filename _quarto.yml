@@ -22,6 +22,9 @@ website:
             text: Assignment 2
           - href: Assignments/Assignment_4/Assignment4_Sen_Sam.qmd
             text: Assignment 4
+          - href: Assignments/Assignment_5/Assignment5_Sen_Sam.qmd
+            text: Assignment 5
+
       
       - text: Weekly Notes 
         menu:
