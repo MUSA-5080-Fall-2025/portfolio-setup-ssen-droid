@@ -216,7 +216,6 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <li><a href="#spatial-patterns" id="toc-spatial-patterns" class="nav-link" data-scroll-target="#spatial-patterns">Spatial Patterns</a></li>
   <li><a href="#temporal-patterns" id="toc-temporal-patterns" class="nav-link" data-scroll-target="#temporal-patterns">Temporal Patterns</a></li>
   </ul></li>
-  <li><a href="#part-iii-feature-engineering-and-model-improvement" id="toc-part-iii-feature-engineering-and-model-improvement" class="nav-link" data-scroll-target="#part-iii-feature-engineering-and-model-improvement">Part III: Feature Engineering and Model Improvement</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -1302,10 +1301,6 @@ $ avg_demand    &lt;dbl&gt; 0.01460823, 0.27490040, 0.26826029, 0.69986720, 0.15
 </div>
 </div>
 <p><strong>The temporal error analysis shows that Model 2 performs unevenly across different times of day. Prediction errors are highest during the AM and PM rush periods, particularly on weekdays, when commuting patterns create sharp spikes in demand that are harder for the model to capture. Mid-day and evening periods show moderate error levels, reflecting more stable leisure and errand travel.Overnight hours have the lowest errors for both weekdays and weekends because most stations have near-zero demand during this period, making predictions easier. The fact that weekend rush periods exhibit lower MAE than weekday rush periods suggests that weekend bike usage is less peaky, more uniform, and therefore easier to forecast. Overall, the model struggles most during high-volume, high-variability commuting hours.</strong></p>
-</section>
-</section>
-<section id="part-iii-feature-engineering-and-model-improvement" class="level2">
-<h2 class="anchored" data-anchor-id="part-iii-feature-engineering-and-model-improvement">Part III: Feature Engineering and Model Improvement</h2>
 <div class="cell">
 <details class="code-fold">
 <summary>Code</summary>
@@ -1453,6 +1448,7 @@ Caused by warning:
 <hr>
 
 
+</section>
 </section>
 </section>
 
