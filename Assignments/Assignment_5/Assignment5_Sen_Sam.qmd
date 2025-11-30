@@ -527,7 +527,6 @@ ggplot(temporal_errors, aes(x = time_of_day, y = MAE, fill = weekend_label)) +
 ```
 **The temporal error analysis shows that Model 2 performs unevenly across different times of day. Prediction errors are highest during the AM and PM rush periods, particularly on weekdays, when commuting patterns create sharp spikes in demand that are harder for the model to capture. Mid-day and evening periods show moderate error levels, reflecting more stable leisure and errand travel.Overnight hours have the lowest errors for both weekdays and weekends because most stations have near-zero demand during this period, making predictions easier. The fact that weekend rush periods exhibit lower MAE than weekday rush periods suggests that weekend bike usage is less peaky, more uniform, and therefore easier to forecast. Overall, the model struggles most during high-volume, high-variability commuting hours.**
 
-## Part III: Feature Engineering and Model Improvement 
 ```{r}
 study_panel_complete <- study_panel_complete %>%
   mutate(
@@ -595,6 +594,9 @@ mae_model6
 ```
 
 **I added two new weather-based features to Model 2:(1) Feels-like temperature, capturing wind chill effects, and (2) A “nice-weather” indicator for hours with temperature ≥ 50°F and zero precipitation. After refitting the model (Model 6), the resulting MAE on the Q4 2024 test set was 0.3869, virtually the same as Model 2’s MAE of 0.3860. This suggests that in Q4, when most hours are cold and have low, stable demand, these additional features do not meaningfully improve predictive accuracy.In warmer quarters these features might be more effective, but for Q4 they add little explanatory power because weather conditions vary less and demand is low or zero in many station-hours** 
+```{r}
+
+```
 
 
 I added two new weather-based features to Model 2:
